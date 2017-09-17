@@ -88,9 +88,9 @@ class Kernel {
     return this.accum
   }
 
-  /** I put this word into the accumulator. */
-  public set(word: Word): void {
-    this.accum.value = word.value
+  /** I put this word into the accumulator or this register. */
+  public set(word: Word, register: Register = this.accum): void {
+    register.value = word.value
   }
 
   /** I copy the accumulator's value to this register. */
@@ -104,18 +104,15 @@ class Kernel {
   }
 
   /** I add either this word or the data register into the accumulator. */
-  public add(operand?: Word): void {
-    operand = operand || this.data
+  public add(operand: Word = this.data): void {
     this.accum.value += operand.value
   }
 
-  public sub(operand?: Word): void {
-    operand = operand || this.data
+  public sub(operand: Word = this.data): void {
     this.accum.value -= operand.value
   }
 
-  public mul(operand?: Word): void {
-    operand = operand || this.data
+  public mul(operand: Word = this.data): void {
     this.accum.value *= operand.value
   }
 
@@ -182,9 +179,8 @@ t.write(4, new Cell(480))
 k.add(t.read(4))
 */
 
-k.set(new Word(1))
-k.transfer(k.data)
-k.set(new Word(2))
+k.set(new Word(2), k.data)
+k.set(new Word(0))
 k.and()
 
 log(k)
