@@ -98,41 +98,25 @@ class Kernel {
     register.value = this.accum.value
   }
 
-  /** I back up the value in this register. *
-  public backup(register: Register): void {
-    register.backup()
-  }*/
-
-  /** I restore this register's value from backup. *
-  public restore(register: Register): void {
-    register.restore()
-  }*/
-
   /** I zero out the value of the accumulator. */
   public zero(): void {
     this.accum.value = 0
   }
 
-  /** I add the value in the data register into the accumulator. */
-  public add(): void {
-    this.accum.value += this.data.value
-  }
-
-  public addMem(cell: Cell): void {
-    this.accum.value += cell.value
-  }
-
-  public add2(operand?: Word): void {
+  /** I add either this word or the data register into the accumulator. */
+  public add(operand?: Word): void {
     operand = operand || this.data
     this.accum.value += operand.value
   }
 
-  public sub(): void {
-    this.accum.value -= this.data.value
+  public sub(operand?: Word): void {
+    operand = operand || this.data
+    this.accum.value -= operand.value
   }
 
-  public mul(): void {
-    this.accum.value *= this.data.value
+  public mul(operand?: Word): void {
+    operand = operand || this.data
+    this.accum.value *= operand.value
   }
 
   /** I increase the accumulator by one. */
@@ -156,7 +140,7 @@ class Kernel {
   }
 
   public and(): void {
-    this.accum.value &= this.data.value
+    this.accum.value = Number(Boolean(this.accum.value) && Boolean(this.data.value))
   }
 
   /** I test if the data register is equal to this word and put the result into the accumulator. */
@@ -187,14 +171,21 @@ class Tape {
 }
 
 const k = new Kernel()
+const t = new Tape()
+
+/*
 k.set(new Word(4))
 k.transfer(k.data)
 k.set(new Word(48))
-k.add2()
-
-const t = new Tape()
+k.add()
 t.write(4, new Cell(480))
-k.add2(t.read(4))
+k.add(t.read(4))
+*/
+
+k.set(new Word(1))
+k.transfer(k.data)
+k.set(new Word(2))
+k.and()
 
 log(k)
 log(t)
