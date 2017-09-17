@@ -122,6 +122,11 @@ class Kernel {
     this.accum.value += cell.value
   }
 
+  public add2(operand?: Word): void {
+    operand = operand || this.data
+    this.accum.value += operand.value
+  }
+
   public sub(): void {
     this.accum.value -= this.data.value
   }
@@ -171,8 +176,8 @@ class Tape {
   private memory: Cell[] = []
 
   /** I read the cell of data from my memory at this address. */
-  public read(address: number): Cell {
-    return this.memory[address]
+  public read(address: number): Word {
+    return new Word(this.memory[address].value)
   }
 
   /** I write this cell of data to this address in my memory. */
@@ -185,11 +190,11 @@ const k = new Kernel()
 k.set(new Word(4))
 k.transfer(k.data)
 k.set(new Word(48))
-k.add()
+k.add2()
 
 const t = new Tape()
 t.write(4, new Cell(480))
-k.addMem(t.read(4))
+k.add2(t.read(4))
 
 log(k)
 log(t)
