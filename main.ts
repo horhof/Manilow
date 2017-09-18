@@ -23,26 +23,6 @@ class Word {
 }
 
 /**
- * I am the smallest segment of data, probably less than a word, used for
- * long-term storage of data.
- */
-class Cell {
-  protected _data: number = 0
-
-  constructor(data?: number) {
-    this._data = data || 0
-  }
-
-  public get value(): number {
-    return this._data
-  }
-
-  public set value(data: number) {
-    this._data = data
-  }
-}
-
-/**
  * I am just a word of data but can back up my value to a dedicated backup
  * register.
  * 
@@ -70,32 +50,32 @@ class Register extends Word {
  * API:
  * - Accum
  * - Data
- * - Get = accum value
- * - Set: new accum value.
- * - Transfer: register.
- * - Zero.
- * - Add.
- * - Sub.
- * - Mul.
+ * - Assign: [source], [destination].
  */
 class Kernel {
+  /** Used as the destination for most operations. */
   public accum = new Register()
 
+  /** Used as a source for binary operations. */
   public data = new Register()
 
-  /** I return the word in the accumulator. */
-  public get(): Word {
-    return this.accum
+  public assign(source: Register = this.data, destination: Register = this.accum): void {
+    source.value = destination.value
   }
 
-  /** I put this word into the accumulator or this register. */
+  /** I return the word in this register or the accumulator. */
+  public get(register: Register = this.accum): Word {
+    return register
+  }
+
+  /** I put this word into this register or the accumulator. */
   public set(word: Word, register: Register = this.accum): void {
     register.value = word.value
   }
 
-  /** I copy the accumulator's value to this register. */
-  public transfer(register: Register): void {
-    register.value = this.accum.value
+  /** I copy value to this destination register from this source or the accumulator. */
+  public transfer(destination: Register, source: Register = this.accum): void {
+    destination.value = source.value
   }
 
   /** I zero out the value of the accumulator. */
@@ -150,20 +130,20 @@ class Kernel {
  * I hold banks of cells and permit I/O with them.
  * 
  * API:
- * - Read: address = cell value
- * - Write: address, cell value.
+ * - Read: address = word
+ * - Write: address, word.
  */
 class Tape {
-  private memory: Cell[] = []
+  private memory: Word[] = []
 
-  /** I read the cell of data from my memory at this address. */
+  /** I read out the word from a cell at this address. */
   public read(address: number): Word {
     return new Word(this.memory[address].value)
   }
 
-  /** I write this cell of data to this address in my memory. */
-  public write(address: number, cell: Cell): void {
-    this.memory[address] = cell
+  /** I write this word to this address. */
+  public write(address: number, word: Word): void {
+    this.memory[address] = word
   }
 }
 
