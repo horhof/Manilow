@@ -87,14 +87,15 @@ function mul(a: Word, b: Word): Word { return a * b }
 
 interface IsaEntry {
   code: string
-  mode: Function
-  fn: Function
+//mode: Function
+  fn: { (...x: any[]): void }
 }
 
 const isa: IsaEntry[] = [
 //{ code: 'noop', fn: () => undefined }
 //{ code: 'add', fn: add, mode: applyBinaryToDest }
-  { code: 'add', fn: (...x: any[]) => applyBinaryToDest(add, x) }
+  { code: 'noop', fn: (...x) => undefined },
+  { code: 'add', fn: (...x) => applyBinaryToDest(add, x) }
 ]
 
 /*
@@ -105,8 +106,8 @@ const program: Program = {
 }
 */
 
-//nst source = `noop        |             |                                    
-const source = `add         | 0d17, 1     | Add decimal 17 to word at address 1`
+const source = `noop        |             |                                    
+add         | 0d17, 1     | Add decimal 17 to word at address 1`
 
 const ARGS = 1
 
