@@ -94,8 +94,8 @@ interface IsaEntry {
 
 const isa: IsaEntry[] = [
   { code: 'noop', fn: (...x) => undefined },
-  { code: 'add', fn: (...x) => applyBinaryToDest(add, x) }
-  { code: 'sub', fn: (...x) => applyBinaryToDest(sub, x) }
+  { code: 'add', fn: (...x) => applyBinaryToDest(add, x) },
+  { code: 'sub', fn: (...x) => applyBinaryToDest(sub, x) },
   { code: 'mul', fn: (...x) => applyBinaryToDest(mul, x) }
 ]
 
