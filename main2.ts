@@ -71,6 +71,7 @@ type BinaryTransform = { (a: Word, b: Word): Word }
 
 //nction applyBinaryToDest(fn: BinaryTransform, source: Imm | Addr = DATA, dest: Addr = ACC): void {
 function applyBinaryToDest(fn: BinaryTransform, operands: any[] = []): void {
+  log(`#applyBinaryToDest> Operands=%O`, operands)
   const source: Imm | Addr = operands[0] || DATA
   const dest: Addr = operands[1] || ACC
   log(`#applyBinaryToDest> Fn=%o Src=%o Dest=%o`, fn, source, dest)
@@ -107,19 +108,22 @@ const program: Program = {
 */
 
 const source = `noop        |             |                                    
-add         | 0d17, 1     | Add decimal 17 to word at address 1`
+add         | #17, @0     | Add decimal 17 to word at address 1
+add         | #34, @1     | Add decimal 17 to word at address 1
+noop        |             |                                   `
 
 const ARGS = 1
 
 let p: any = source.split(`\n`)
 p = p.map((line: string) => line.split(`|`).map((c: string) => c.trim()))
 p.forEach((line: any) => line[ARGS] = line[ARGS].split(',').map((c: string) => c.trim()))
+log(p)
 
 function getOperand(line: string): Operand {
-  if (line[0] === '0') {
+  if (line[0] === '#') {
     return {
       type: 'imm',
-      value: Number(line.slice(2))
+      value: Number(line.slice(1))
     }
   }
   else {
