@@ -1,3 +1,4 @@
+import * as fs from 'fs'
 import * as Debug from 'debug'
 
 const log = Debug('Manilow')
@@ -13,15 +14,6 @@ class Imm {
     this.data = data || Imm.ZERO
   }
 }
-
-enum Reg {
-  ACC,
-  DATA
-}
-
-const NUM_REGS = 2
-
-const memory: Word[] = Array(NUM_REGS).fill(0)
 
 class Addr {
   public readonly address: number
@@ -47,8 +39,17 @@ class Ptr extends Addr {
   }
 }
 
+enum Reg {
+  ACC,
+  DATA
+}
+
 const ACC = new Addr(Reg.ACC)
 const DATA = new Addr(Reg.DATA)
+
+const NUM_REGS = 2
+
+const memory: Word[] = Array(NUM_REGS).fill(0)
 
 interface Program {
   instructions: Instruction[]
@@ -67,7 +68,9 @@ interface Operand {
   value: number
 }
 
+type UnaryTransform = { (a: Word): Word }
 type BinaryTransform = { (a: Word, b: Word): Word }
+type TernaryTransform = { (a: Word, b: Word, c: Word): Word }
 
 /**
  * I write to a destination, from either a source word or an immediate value.
@@ -112,7 +115,6 @@ const isa: IsaEntry[] = [
   { code: 'mul', fn: (...x) => applyBinaryToDest(mul, x) }
 ]
 
-import * as fs from 'fs'
 const source = fs.readFileSync('go.asm', 'utf-8')
 
 const ARGS = 1
@@ -147,20 +149,16 @@ function getInstruction(line: any[]): Instruction {
   }
 }
 
-//log(p)
 const program = p.map(getInstruction)
 log(`Program=%O`, program)
 
 log(`Memory before=%O`, memory)
 
+// Loop for each instruction in the program.
 program.forEach((i: Instruction) => {
   const { code, arity, operands, comment } = i
   const found: IsaEntry = isa.find(x => x.code === code)
-  log(`F=%O`, found)
-//const apply = found.mode
   const fn = found.fn
-  log(`Ops=%O`, operands)
-  log(`Apply=%O`, fn)
 
   const ops = operands.map(op => {
     if (op.type === 'imm')
