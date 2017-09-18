@@ -69,16 +69,29 @@ interface Operand {
 
 type BinaryTransform = { (a: Word, b: Word): Word }
 
-//nction applyBinaryToDest(fn: BinaryTransform, source: Imm | Addr = DATA, dest: Addr = ACC): void {
-function applyBinaryToDest(fn: BinaryTransform, operands: any[] = []): void {
-  log(`#applyBinaryToDest> Operands=%O`, operands)
+/**
+ * I write to a destination, from either a source word or an immediate value.
+ */
+function write(operands: any[] = []): void {
   const source: Imm | Addr = operands[0] || DATA
   const dest: Addr = operands[1] || ACC
-  log(`#applyBinaryToDest> Fn=%o Src=%o Dest=%o`, fn, source, dest)
+
+  const value = (source instanceof Imm) ? source.data : source.read()
+  dest.write(value)
+}
+
+/**
+ * I apply a binary transform between a source and a destination, overwriting
+ * the destination with the output.
+ */
+function applyBinaryToDest(fn: BinaryTransform, operands: any[] = []): void {
+  const source: Imm | Addr = operands[0] || DATA
+  const dest: Addr = operands[1] || ACC
+
   const existing = dest.read()
-  log(`#applyBinaryToDest> Existing=%O`, existing)
   const operand = (source instanceof Imm) ? source.data : source.read()
   const result = fn(existing, operand)
+
   dest.write(result)
 }
 
@@ -88,11 +101,11 @@ function mul(a: Word, b: Word): Word { return a * b }
 
 interface IsaEntry {
   code: string
-//mode: Function
   fn: { (...x: any[]): void }
 }
 
 const isa: IsaEntry[] = [
+  { code: 'write', fn: (...x) => write(x) },
   { code: 'noop', fn: (...x) => undefined },
   { code: 'add', fn: (...x) => applyBinaryToDest(add, x) },
   { code: 'sub', fn: (...x) => applyBinaryToDest(sub, x) },

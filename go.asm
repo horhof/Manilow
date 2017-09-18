@@ -3,3 +3,4 @@ add  | #4, @0 | Now have a 9.
 noop |
 sub  | #1, @0 | Now have 8.
 mul  | #4, @0 | Now have 32.
+write | #128, @4 |
