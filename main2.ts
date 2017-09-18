@@ -93,31 +93,20 @@ interface IsaEntry {
 }
 
 const isa: IsaEntry[] = [
-//{ code: 'noop', fn: () => undefined }
-//{ code: 'add', fn: add, mode: applyBinaryToDest }
   { code: 'noop', fn: (...x) => undefined },
   { code: 'add', fn: (...x) => applyBinaryToDest(add, x) }
+  { code: 'sub', fn: (...x) => applyBinaryToDest(sub, x) }
+  { code: 'mul', fn: (...x) => applyBinaryToDest(mul, x) }
 ]
 
-/*
-const program: Program = {
-  instructions: [
-    { code: 'add', arity: 2, operands: [{ type: 'imm', value: 17 }, { type: 'addr', deref: false, value: 1 }] }
-  ]
-}
-*/
-
-const source = `noop        |             |                                    
-add         | #17, @0     | Add decimal 17 to word at address 1
-add         | #34, @1     | Add decimal 17 to word at address 1
-noop        |             |                                   `
+import * as fs from 'fs'
+const source = fs.readFileSync('go.asm', 'utf-8')
 
 const ARGS = 1
 
 let p: any = source.split(`\n`)
 p = p.map((line: string) => line.split(`|`).map((c: string) => c.trim()))
 p.forEach((line: any) => line[ARGS] = line[ARGS].split(',').map((c: string) => c.trim()))
-log(p)
 
 function getOperand(line: string): Operand {
   if (line[0] === '#') {
