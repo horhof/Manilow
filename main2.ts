@@ -123,23 +123,32 @@ let p: any = source.split(`\n`)
 p = p.map((line: string) => line.split(`|`).map((c: string) => c.trim()))
 p.forEach((line: any) => line[ARGS] = line[ARGS].split(',').map((c: string) => c.trim()))
 
+/** I transform a string representing an operand with the data structure. */
 function getOperand(line: string): Operand {
-  if (line[0] === '#') {
+  const literal = line[0] === '#'
+  const deref = line[0] === '*'
+  const ref = !literal && !deref
+
+  if (literal)
     return {
       type: 'imm',
       value: Number(line.slice(1))
     }
-  }
-  else {
-    const deref = line[0] === '*'
+  else if (deref)
     return {
       type: 'addr',
       deref,
       value: Number(line.slice(1))
     }
-  }
+  else
+    return {
+      type: 'addr',
+      deref,
+      value: Number(line)
+    }
 }
 
+/** I transform a line of syntax to an instruction. */
 function getInstruction(line: any[]): Instruction {
   return {
     code: line[0],
