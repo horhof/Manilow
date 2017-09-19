@@ -32,20 +32,19 @@ interface OperandDef {
   value: number
 }
 
-// Set up the memory.
-const NUM_REGS = 2
-const memory: Word[] = Array(NUM_REGS).fill(0)
-
 /**
  * An operand whose value is directly held inside the instance.
  */
 class Value {
   public readonly data: number
 
+  protected readonly memory: Word[]
+
   static ZERO = 0
 
-  constructor(data: number) {
+  constructor(data: number, memory?: Word[]) {
     this.data = data || Value.ZERO
+    this.memory = memory
   }
 
   public read(): Word {
@@ -67,11 +66,11 @@ class Addr extends Value {
   }
 
   public read(): Word {
-    return memory[this.address] || Value.ZERO
+    return this.memory[this.address] || Value.ZERO
   }
 
   public write(value: Word): void {
-    memory[this.address] = value
+    this.memory[this.address] = value
   }
 }
 
@@ -81,13 +80,13 @@ class Addr extends Value {
  */
 class Ptr extends Addr {
   protected get address(): number {
-    return memory[this.data]
+    return this.memory[this.data]
   }
 }
 
 // "Registers" are just particular places in memory that have conventional
 // meaning according to the built-in operations. E.g. add, when given no
-// operands will add DATA into ACC.
+// operands, will add DATA into ACC.
 const ACCUM = new Addr(0)
 const DATA = new Addr(1)
 
@@ -102,21 +101,15 @@ const DATA = new Addr(1)
  */
 function applySrcToDest(fn: BinaryTransform) {
   return (ops: Value[]): void => {
-    log(`Ops=%O`, ops)
     const src = ops[0] || DATA
     const dest = ops[1] || ACCUM
-    log(`Fn=%O`, fn)
     const result = fn(dest.read(), src.read())
-    log(`Res=%O`, result)
     dest.write(result)
   }
 }
 
 // Binary transforms.
-function add(a: Word, b: Word): Word {
-  log(`add> a=%n b=%n`, a, b)
-  return a + b
-}
+function add(a: Word, b: Word): Word { return a + b }
 function sub(a: Word, b: Word): Word { return a - b }
 function mul(a: Word, b: Word): Word { return a * b }
 
@@ -147,13 +140,16 @@ const isa: IsaEntry[] = [
   { code: 'mul', fn: applySrcToDest(mul) }
 ]
 
-const source = fs.readFileSync('go.asm', 'utf-8')
+// Get the program.
 const interpreter = new Interpreter.Interpreter()
-
+const source = fs.readFileSync('go.asm', 'utf-8')
 const program = interpreter.getProgram(source)
 
-log(`Program=%O`, program)
+// Set up the memory.
+const NUM_REGS = 2
+const memory: Word[] = Array(NUM_REGS).fill(0)
 
+log(`Program=%O`, program)
 log(`Memory before=%O`, memory)
 
 // Loop for each instruction in the program.
@@ -163,19 +159,18 @@ program.forEach(({ code, arity, operands, comment }) => {
   if (!found)
     throw new Error(`Code ${code} not found.`)
 
-  const fn = found.fn
-
+  // Turn operands into Values / Addresses / Pointers.
   const ops = operands.map(op => {
     if (op.type === Interpreter.OpType.IMM)
       return new Value(op.value)
-    else if (op.type === Interpreter.OpType.ADDR)
-      if (op.deref)
-        return new Ptr(op.value)
-      else
-        return new Addr(op.value)
+
+    if (op.deref)
+      return new Ptr(op.value, memory)
+
+    return new Addr(op.value, memory)
   })
 
-  fn(ops)
+  found.fn(ops)
 })
 
 log(`Memory after=%O`, memory)
