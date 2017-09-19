@@ -39,7 +39,7 @@ function write(operands: any[] = []): void {
 }
 */
 
-interface IsaEntry {
+export interface IsaEntry {
   code: string
   fn: { (operands: Value[]): void }
 }
