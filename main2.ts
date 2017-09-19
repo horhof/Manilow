@@ -3,7 +3,7 @@ import * as Debug from 'debug'
 
 import * as Interpreter from './Interpreter'
 import { Word, Value, Addr, Ptr } from './Word'
-import { Kernel, IsaEntry } from './Operations'
+import { Kernel, IsaEntry } from './Kernel'
 
 const log = Debug('Manilow')
 
@@ -52,7 +52,7 @@ program.forEach(({ code, arity, operands, comment }) => {
     return new Ptr(op.value, memory)
   })
 
-  op.fn(args)
+  op.fn(...args)
 })
 
 log(`Memory after=%O`, memory)

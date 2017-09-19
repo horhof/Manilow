@@ -10,6 +10,9 @@
  * Each instruction is separated by a newline. The comment is after
  * COMMENT_SEP. The op will be before the first CODE_SEP. The operands will be
  * split by OPERAND_SEP.
+ * 
+ * API:
+ * - Get program: source = instructions
  */
 
 import * as Debug from 'debug'
@@ -140,9 +143,10 @@ export class Interpreter {
     const code = text[1]
 
     const radixTable: { [index: string]: number } = {
+      b: 2,
+      o: 8,
       d: 10,
-      x: 16,
-      o: 8
+      x: 16
     }
 
     const radix = radixTable[code]
