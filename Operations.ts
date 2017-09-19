@@ -26,10 +26,8 @@ export class Kernel {
   }
 
   public isa: IsaEntry[] = [
+    { code: 'noop', fn: () => undefined },
     { code: 'copy', fn: this.write.bind(this) },
-    /*
-    { code: 'noop', fn: (...x) => undefined },
-    */
     { code: 'add', fn: this.applySrcToDest(add) },
     { code: 'sub', fn: this.applySrcToDest(sub) },
     { code: 'mul', fn: this.applySrcToDest(mul) }
