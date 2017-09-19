@@ -7,12 +7,21 @@ import { Kernel, IsaEntry } from './Operations'
 
 const log = Debug('Manilow')
 
+log(`Creating interpreter...`)
 const interpreter = new Interpreter.Interpreter()
+log(`Reading source code...`)
 const source = fs.readFileSync('go.asm', 'utf-8')
+log(`Parsing source code...`)
 const program = interpreter.getProgram(source)
 
-const kernel = new Kernel()
+
+log(`Initializing memory...`)
 const memory: Word[] = Array(Kernel.NUM_REGS).fill(0)
+log(`Initializing registers...`)
+const accum = new Addr(0, memory)
+const data = new Addr(1, memory)
+log(`Creating kernel...`)
+const kernel = new Kernel(accum, data)
 
 log(`Program=%O`, program)
 log(`Memory before=%O`, memory)
@@ -29,12 +38,18 @@ program.forEach(({ code, arity, operands, comment }) => {
     throw new Error(`Operation "${code}" not found.`)
 
   const args = operands.map(op => {
-    if (op.type === Interpreter.OpType.IMM)
+    if (op.type === Interpreter.OpType.IMM) {
+      log(`Creating new value. Op=%O`, op)
       return new Value(op.value)
+    }
 
-    return (op.deref)
-      ? new Ptr(op.value, memory)
-      : new Addr(op.value, memory)
+    if (!op.deref) {
+      log(`Creating new address. Op=%O`, op)
+      return new Addr(op.value, memory)
+    }
+
+    log(`Creating new pointer. Op=%O`, op)
+    return new Ptr(op.value, memory)
   })
 
   op.fn(args)

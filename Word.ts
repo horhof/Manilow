@@ -1,3 +1,7 @@
+import * as Debug from 'debug'
+
+const log = Debug('Manilow:Ops')
+
 export type Word = number
 
 /**
@@ -13,6 +17,8 @@ export class Value {
   constructor(data: number, memory?: Word[]) {
     this.data = data || Value.ZERO
     this.memory = memory
+    if (!memory)
+      log(`No memory.`)
   }
 
   public read(): Word {
@@ -21,6 +27,7 @@ export class Value {
 
   public write(value: Word): void {
     // Values are immutable.
+    log(`Error. Values are immutable.`)
   }
 }
 

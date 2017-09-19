@@ -1,4 +1,8 @@
+import * as Debug from 'debug'
+
 import { Word, Value, Addr } from './Word'
+
+const log = Debug('Manilow:Ops')
 
 export type UnaryTransform = { (a: Word): Word }
 export type BinaryTransform = { (a: Word, b: Word): Word }
@@ -17,9 +21,14 @@ function mul(a: Word, b: Word): Word { return a * b }
 export class Kernel {
   static NUM_REGS = 2
 
-  public accum = new Addr(0)
+  private accum: Addr
 
-  public data = new Addr(1)
+  private data: Addr
+
+  constructor(accum: Addr, data: Addr) {
+    this.accum = accum
+    this.data = data
+  }
 
   public lookupCode(code: string): IsaEntry | void {
     return this.isa.find(entry => entry.code === code)
@@ -45,9 +54,13 @@ export class Kernel {
   private applySrcToDest(fn: BinaryTransform) {
     return (ops: Value[]): void => {
       const src = ops[0] || this.data
+      log(`src=%O`, src)
       const dest = ops[1] || this.accum
+      log(`dest=%O`, dest)
       const result = fn(dest.read(), src.read())
+      log(`res=%O`, result)
       dest.write(result)
+      log(`aft=%O`, dest)
     }
   }
 
