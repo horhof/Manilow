@@ -1,6 +1,8 @@
 import * as fs from 'fs'
 import * as Debug from 'debug'
 
+import * as Interpreter from './Interpreter'
+
 const log = Debug('Manilow')
 
 type Word = number
@@ -146,62 +148,10 @@ const isa: IsaEntry[] = [
 ]
 
 const source = fs.readFileSync('go.asm', 'utf-8')
+const interpreter = new Interpreter.Interpreter()
 
-const ARGS = 1
+const program = interpreter.getProgram(source)
 
-let p: any = source.split(`\n`)
-p = p.map((line: string) => line.split(`|`).map((c: string) => c.trim()))
-p.forEach((line: any) => line[ARGS] = line[ARGS].split(',').map((c: string) => c.trim()))
-
-/** I transform a string representing an operand with the data structure. */
-function getOperand(line: string): OperandDef {
-  // E.g. 0d1300 (decimal 1300), 0x4A00 (hex 4A00).
-  const literal = line[0] === '0'
-  // E.g. *17 (the value pointed to by address 17).
-  const deref = line[0] === '*'
-  // E.g. 4800 (the value in address 4800).
-  const ref = !literal && !deref
-
-  if (literal) {
-    const decimal = line[1] === 'd'
-    const hex = line[1] === 'x'
-    const octal = line[1] === 'o'
-    const radix = (decimal)
-      ? 10
-      : (hex)
-        ? 16
-        : 8
-    return {
-      type: OpType.IMM,
-      value: parseInt(line.slice(2), radix)
-    }
-
-  }
-  else if (deref)
-    return {
-      type: OpType.ADDR,
-      deref,
-      value: Number(line.slice(1))
-    }
-  else
-    return {
-      type: OpType.ADDR,
-      deref,
-      value: Number(line)
-    }
-}
-
-/** I transform a line of syntax to an instruction. */
-function getInstruction(line: any[]): Instruction {
-  return {
-    code: line[0],
-    arity: line[1].length,
-    operands: (<string[]>line[1]).map(getOperand),
-    comment: line[2]
-  }
-}
-
-const program = p.map(getInstruction)
 log(`Program=%O`, program)
 
 log(`Memory before=%O`, memory)
