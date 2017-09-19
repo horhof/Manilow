@@ -20,6 +20,8 @@ const memory: Word[] = Array(Kernel.NUM_REGS).fill(0)
 log(`Initializing registers...`)
 const accum = new Addr(0, memory)
 const data = new Addr(1, memory)
+const input = new Addr(2, memory)
+const output = new Addr(3, memory)
 log(`Creating kernel...`)
 const kernel = new Kernel(accum, data)
 

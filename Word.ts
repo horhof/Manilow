@@ -17,8 +17,6 @@ export class Value {
   constructor(data: number, memory?: Word[]) {
     this.data = data || Value.ZERO
     this.memory = memory
-    if (!memory)
-      log(`No memory.`)
   }
 
   public read(): Word {
@@ -34,6 +32,10 @@ export class Value {
 /**
  * An operand whose value is the address where the value is held
  * and needs to be read and can be written.
+ * 
+ * API:
+ * - Read = word of data
+ * - Write: word.
  */
 export class Addr extends Value {
   protected get address(): number {
@@ -45,6 +47,7 @@ export class Addr extends Value {
   }
 
   public write(value: Word): void {
+    log(`[Addr] #read>`)
     this.memory[this.address] = value
   }
 }
