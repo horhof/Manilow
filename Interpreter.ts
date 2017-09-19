@@ -112,7 +112,7 @@ export class Interpreter {
         log(`#getOpers> OpText=%O`, opText)
 
         // E.g. 0d1300 (decimal 1300), 0x4A00 (hex 4A00).
-        const immediate = opText[0] === '0'
+        const immediate = opText.match(/^0[a-z]/)
         // E.g. *17 (the value pointed to by address 17).
         const deref = opText[0] === '*'
         // E.g. 4800 (the value in address 4800).

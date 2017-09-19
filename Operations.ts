@@ -1,25 +1,12 @@
-import { Value } from 
+import { Word, Value, Addr } from './Word'
 
 export type UnaryTransform = { (a: Word): Word }
 export type BinaryTransform = { (a: Word, b: Word): Word }
 export type TernaryTransform = { (a: Word, b: Word, c: Word): Word }
 
-/**
- * Accept a binary function and return a function with a src/dest pattern.
- * 
- * The source is used as A, the existing destination as B. The result of the
- * binary operation is put back into the destination.
- * 
- * The destination must be an address. The source may be an address or an
- * immediate value.
- */
-function applySrcToDest(fn: BinaryTransform) {
-  return (ops: Value[]): void => {
-    const src = ops[0] || DATA
-    const dest = ops[1] || ACCUM
-    const result = fn(dest.read(), src.read())
-    dest.write(result)
-  }
+export interface IsaEntry {
+  code: string
+  fn: { (operands: Value[]): void }
 }
 
 // Binary transforms.
@@ -27,29 +14,51 @@ function add(a: Word, b: Word): Word { return a + b }
 function sub(a: Word, b: Word): Word { return a - b }
 function mul(a: Word, b: Word): Word { return a * b }
 
-/**
- * I write to a destination, from either a source word or an immediate value.
- *
-function write(operands: any[] = []): void {
-  const source: Value | Addr = operands[0] || DATA
-  const dest: Addr = operands[1] || ACCUM
+export class Kernel {
+  static NUM_REGS = 2
 
-  const value = (source instanceof Value) ? source.data : source.read()
-  dest.write(value)
+  public accum = new Addr(0)
+
+  public data = new Addr(1)
+
+  public lookupCode(code: string): IsaEntry | void {
+    return this.isa.find(entry => entry.code === code)
+  }
+
+  public isa: IsaEntry[] = [
+    { code: 'copy', fn: this.write.bind(this) },
+    /*
+    { code: 'noop', fn: (...x) => undefined },
+    */
+    { code: 'add', fn: this.applySrcToDest(add) },
+    { code: 'sub', fn: this.applySrcToDest(sub) },
+    { code: 'mul', fn: this.applySrcToDest(mul) }
+  ]
+
+  /**
+   * Accept a binary function and return a function with a src/dest pattern.
+   * 
+   * The source is used as A, the existing destination as B. The result of the
+   * binary operation is put back into the destination.
+   * 
+   * The destination must be an address. The source may be an address or an
+   * immediate value.
+   */
+  private applySrcToDest(fn: BinaryTransform) {
+    return (ops: Value[]): void => {
+      const src = ops[0] || this.data
+      const dest = ops[1] || this.accum
+      const result = fn(dest.read(), src.read())
+      dest.write(result)
+    }
+  }
+
+  /**
+   * I write to a destination, from either a source word or an immediate value.
+   */
+  private write(ops: Value[]): void {
+    const src = ops[0] || this.data
+    const dest = ops[1] || this.accum
+    dest.write(src.read())
+  }
 }
-*/
-
-export interface IsaEntry {
-  code: string
-  fn: { (operands: Value[]): void }
-}
-
-export const isa: IsaEntry[] = [
-  /*
-  { code: 'copy', fn: (operands: Value[]) => write(x) },
-  { code: 'noop', fn: (...x) => undefined },
-  */
-  { code: 'add', fn: applySrcToDest(add) },
-  { code: 'sub', fn: applySrcToDest(sub) },
-  { code: 'mul', fn: applySrcToDest(mul) }
-]
