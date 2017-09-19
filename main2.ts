@@ -157,8 +157,7 @@ log(`Program=%O`, program)
 log(`Memory before=%O`, memory)
 
 // Loop for each instruction in the program.
-program.forEach((i: Instruction) => {
-  const { code, arity, operands, comment } = i
+program.forEach(({ code, arity, operands, comment }) => {
   const found: IsaEntry = isa.find(x => x.code === code)
 
   if (!found)
@@ -167,9 +166,9 @@ program.forEach((i: Instruction) => {
   const fn = found.fn
 
   const ops = operands.map(op => {
-    if (op.type === 'imm')
+    if (op.type === Interpreter.OpType.IMM)
       return new Value(op.value)
-    else if (op.type === 'addr')
+    else if (op.type === Interpreter.OpType.ADDR)
       if (op.deref)
         return new Ptr(op.value)
       else
