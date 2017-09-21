@@ -1,3 +1,3 @@
-copy 0d1
-add 0d10
-jump 2
+add 0d1
+jnz 1
+add 0d1000
