@@ -25,5 +25,6 @@ export class Registers {
     for (let i = 0; i < Registers.MAX; i++) {
       this.table[names[i]] = new Addr(i, memory)
     }
+    this.table.ip.write(1)
   }
 }

@@ -76,7 +76,7 @@ export class Interpreter {
    *     sub *13      # Subtract the value pointed to by 13.
    */
   public getProgram(source: string): Instruction[] {
-    this.instructionCount = 0
+    this.instructionCount = 1
     const lines = source.split(Interpreter.INSTRUCTION_SEP)
     return lines.filter(x => x).map(this.getInstruction.bind(this))
   }

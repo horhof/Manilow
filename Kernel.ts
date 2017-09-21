@@ -69,9 +69,6 @@ export class Kernel {
    * @param [dest] Destination address. Defaults to accum.
    */
   private copy(src: Value | Addr = this.registers.table.data, dest: Addr = this.registers.table.accum): void {
-    log(this.registers)
-    log(this.registers.table.accum)
-    log(this.registers.table.data)
     dest.write(src.read())
   }
 
