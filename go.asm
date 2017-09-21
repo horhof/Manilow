@@ -1,4 +1,3 @@
-copy 0d80
-double
-square
-sqrt
+copy 0d1
+copy 0d10, 1
+double *0

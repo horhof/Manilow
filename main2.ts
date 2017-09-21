@@ -36,16 +36,13 @@ program.forEach(({ code, arity, operands, comment }) => {
 
   const args = operands.map(op => {
     if (op.type === Interpreter.OpType.IMM) {
-      log(`Creating new value. Op=%O`, op)
       return new Value(op.value)
     }
 
     if (!op.deref) {
-      log(`Creating new address. Op=%O`, op)
       return new Addr(op.value, memory)
     }
 
-    log(`Creating new pointer. Op=%O`, op)
     return new Ptr(op.value, memory)
   })
 

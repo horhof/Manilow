@@ -47,7 +47,6 @@ export class Addr extends Value {
   }
 
   public write(value: Word): void {
-    log(`[Addr] #read>`)
     this.memory[this.address] = value
   }
 }
