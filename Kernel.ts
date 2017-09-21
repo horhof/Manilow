@@ -6,8 +6,9 @@
 import * as Debug from 'debug'
 
 import { Word, Value, Addr } from './Word'
+import { Registers } from './Registers'
 
-const log = Debug('Manilow:Kernel')
+const log = Debug('Mel:Kernel')
 
 export type UnaryTransform = { (a: Word): Word }
 export type BinaryTransform = { (a: Word, b: Word): Word }
@@ -31,12 +32,7 @@ function sub(a: Word, b: Word): Word { return a - b }
 function mul(a: Word, b: Word): Word { return a * b }
 
 export class Kernel {
-  static NUM_REGS = 4
-
-  private accum: Addr
-  private data: Addr
-  private input: Addr
-  private output: Addr
+  public registers: Registers
 
   private isa: IsaEntry[] = [
     { code: 'noop', fn: () => undefined },
@@ -54,11 +50,8 @@ export class Kernel {
     { code: 'sqrt', fn: this.applyToDest(sqrt) },
   ]
 
-  constructor(memory: Word[]) {
-    this.accum = new Addr(0, memory)
-    this.data = new Addr(1, memory)
-    this.input = new Addr(2, memory)
-    this.output = new Addr(3, memory)
+  constructor(registers: Registers) {
+    this.registers = registers
   }
 
   public lookupCode(code: string): IsaEntry | void {
@@ -75,11 +68,14 @@ export class Kernel {
    * @param [src] Source value or address. Defaults to data.
    * @param [dest] Destination address. Defaults to accum.
    */
-  private copy(src: Value | Addr = this.data, dest: Addr = this.accum): void {
+  private copy(src: Value | Addr = this.registers.table.data, dest: Addr = this.registers.table.accum): void {
+    log(this.registers)
+    log(this.registers.table.accum)
+    log(this.registers.table.data)
     dest.write(src.read())
   }
 
-  private zero(dest: Addr = this.accum): void {
+  private zero(dest: Addr = this.registers.table.accum): void {
     this.copy(new Value(0), dest)
   }
 
@@ -91,12 +87,12 @@ export class Kernel {
    * 
    * @param [dest] Destination address. Defaults to accum.
    */
-  private in(dest: Addr = this.accum): void {
-    dest.write(this.input.read())
+  private in(dest: Addr = this.registers.table.accum): void {
+    dest.write(this.registers.table.input.read())
   }
 
-  private out(src: Addr = this.accum): void {
-    this.output.write(src.read())
+  private out(src: Addr = this.registers.table.accum): void {
+    this.registers.table.output.write(src.read())
   }
 
   /**
@@ -113,7 +109,7 @@ export class Kernel {
    * immediate value.
    */
   private applySrcToDest(fn: BinaryTransform) {
-    return (src: Value = this.data, dest: Value = this.accum): void => {
+    return (src: Value = this.registers.table.data, dest: Value = this.registers.table.accum): void => {
       const result = fn(dest.read(), src.read())
       dest.write(result)
     }
@@ -127,7 +123,7 @@ export class Kernel {
    * - Apply src to dest: a. (Call fn with a)
    */
   private applyToDest(fn: UnaryTransform) {
-    return (dest: Addr = this.accum): void => {
+    return (dest: Addr = this.registers.table.accum): void => {
       const existing = dest.read()
       dest.write(fn(existing))
     }

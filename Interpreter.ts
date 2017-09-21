@@ -1,23 +1,6 @@
-/**
- * I take incoming source code and return a parsed program.
- * 
- * Example:
- * 
- *   add 0x40, 1  # Add 64 to 1 (DATA).
- *   add          # Add DATA to ACCUM.
- *   sub *13      # Subtract the value pointed to by 13.
- * 
- * Each instruction is separated by a newline. The comment is after
- * COMMENT_SEP. The op will be before the first CODE_SEP. The operands will be
- * split by OPERAND_SEP.
- * 
- * API:
- * - Get program: source = instructions
- */
-
 import * as Debug from 'debug'
 
-const log = Debug('Manilow:Interpreter')
+const log = Debug('Mel:Interpreter')
 
 /** The fully-assembled program that I produce. */
 export interface Program {
@@ -36,13 +19,13 @@ export enum OpType {
  * 
  * Examples:
  * 
- *   0d1400
- *   0x4A
- *   0o7
- *   14
- *   *4
+ *     0d1400
+ *     0x4A
+ *     0o7
+ *     14
+ *     *4
  */
-export interface Operand {
+export interface Argument {
   type: OpType
   value: number
   deref?: boolean
@@ -52,26 +35,42 @@ export interface Operand {
 export interface Instruction {
   code: string
   arity: number
-  operands: Operand[]
+  args: Argument[]
   comment?: string
 }
 
+/**
+ * I take incoming source code and return a parsed program.
+ * 
+ * Example:
+ * 
+ *     add 0x40, 1  # Add 64 to 1 (DATA).
+ *     add          # Add DATA to ACCUM.
+ *     sub *13      # Subtract the value pointed to by location 13.
+ * 
+ * Each instruction is separated by a newline. The comment is after
+ * `COMMENT_SEP`. The op will be before the first `CODE_SEP`. The args will be
+ * split by `ARG_SEP`.
+ * 
+ * API:
+ * - Get program: source = instructions
+ */
 export class Interpreter {
   static INSTRUCTION_SEP = `\n`
 
   static CODE_SEP = ` `
 
-  static OPERAND_SEP = `,`
+  static ARG_SEP = `,`
 
   static COMMENT_SEP = `#`
 
   /**
-   * I separate the source by INSTRUCTION_SEP and #getInstruction
-   * for each.
+   * I separate the source by `INSTRUCTION_SEP` and run `#getInstruction` for
+   * each.
    * 
-   *   add 0x40, 1  # Add 64 to 1 (DATA).
-   *   add          # Add DATA to ACCUM.
-   *   sub *13      # Subtract the value pointed to by 13.
+   *     add 0x40, 1  # Add 64 to 1 (DATA).
+   *     add          # Add DATA to ACCUM.
+   *     sub *13      # Subtract the value pointed to by 13.
    */
   public getProgram(source: string): Instruction[] {
     const lines = source.split(Interpreter.INSTRUCTION_SEP)
@@ -79,8 +78,8 @@ export class Interpreter {
   }
 
   /**
-   * I separate the comment from the code and operands by COMMENT_SEP. The
-   * operands I parse by #getOperands.
+   * I separate the comment from the code and operands by `COMMENT_SEP`. The
+   * arguments I parse by `#getArguments`.
    */
   private getInstruction(line: string): Instruction | void {
     if (!line)
@@ -89,13 +88,13 @@ export class Interpreter {
     const [operationText, comment] = line.split(Interpreter.COMMENT_SEP).map(x => x.trim())
     const split = operationText.split(Interpreter.CODE_SEP)
     const code = split[0]
-    const operands = this.getOperands(split.slice(1).join(``))
-    log(`#getInst> Comment=%O Code=%O Operands=%O`, comment, code, operands)
+    const args = this.getArguments(split.slice(1).join(``))
+    log(`#getInst> Comment=%O Code=%O Operands=%O`, comment, code, args)
 
     return {
       code,
-      arity: operands.length,
-      operands,
+      arity: args.length,
+      args,
       comment
     }
   }
@@ -103,12 +102,12 @@ export class Interpreter {
   /**
    * I extract operands from text like `0x40, 1`.
    */
-  private getOperands(operands: string | void): Operand[] {
+  private getArguments(operands: string | void): Argument[] {
     if (!operands)
       return []
 
     return operands
-      .split(Interpreter.OPERAND_SEP)
+      .split(Interpreter.ARG_SEP)
       .map((opText: string) => {
         opText = opText.trim()
 

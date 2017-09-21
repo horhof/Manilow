@@ -1,6 +1,6 @@
 import * as Debug from 'debug'
 
-const log = Debug('Manilow:Ops')
+const log = Debug('Mel:Ops')
 
 export type Word = number
 
