@@ -33,6 +33,7 @@ export interface Argument {
 
 /** Each line is an instruction. */
 export interface Instruction {
+  no: number
   code: string
   arity: number
   args: Argument[]
@@ -64,6 +65,8 @@ export class Interpreter {
 
   static COMMENT_SEP = `#`
 
+  private instructionCount: number
+
   /**
    * I separate the source by `INSTRUCTION_SEP` and run `#getInstruction` for
    * each.
@@ -73,6 +76,7 @@ export class Interpreter {
    *     sub *13      # Subtract the value pointed to by 13.
    */
   public getProgram(source: string): Instruction[] {
+    this.instructionCount = 0
     const lines = source.split(Interpreter.INSTRUCTION_SEP)
     return lines.filter(x => x).map(this.getInstruction.bind(this))
   }
@@ -92,6 +96,7 @@ export class Interpreter {
     log(`#getInst> Comment=%O Code=%O Operands=%O`, comment, code, args)
 
     return {
+      no: this.instructionCount++,
       code,
       arity: args.length,
       args,

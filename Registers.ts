@@ -13,6 +13,7 @@ export class Registers {
     src: null,
     input: null,
     output: null,
+    ip: null,
     stack: null,
     base: null
   }
