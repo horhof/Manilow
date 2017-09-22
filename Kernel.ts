@@ -1,8 +1,3 @@
-/**
- * Kernel API:
- * - Lookup code: op code = ISA entry
- */
-
 import * as Debug from 'debug'
 
 import { Word, Value, Addr } from './Word'
@@ -31,6 +26,10 @@ function add(a: Word, b: Word): Word { return a + b }
 function sub(a: Word, b: Word): Word { return a - b }
 function mul(a: Word, b: Word): Word { return a * b }
 
+/**
+ * Kernel API:
+ * - Lookup code: op code = ISA entry
+ */
 export class Kernel {
   public registers: Registers
 

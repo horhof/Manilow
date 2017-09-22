@@ -1,6 +1,7 @@
 import * as Debug from 'debug'
 
-const log = Debug('Mel:Ops')
+const log = Debug('Mel:Word')
+const io = Debug('Mel:I/O')
 
 export type Word = number
 
@@ -58,5 +59,48 @@ export class Addr extends Value {
 export class Ptr extends Addr {
   protected get address(): number {
     return this.memory[this.data]
+  }
+}
+
+export class Channel {
+  private data: Word[]
+
+  constructor(data: Word[] = []) {
+    this.data = data
+  }
+
+  public push(value: Word): void {
+    this.data.push(value)
+  }
+
+  public pull(): Word {
+    const value = this.data.shift()
+    if (!value)
+      throw new Error(`Input channel was empty at time of access.`)
+    return value
+  }
+}
+
+/**
+ * The "memory" for a port are the I/O channels. It will write to whichever
+ * one its address points to.
+ */
+export class Port extends Addr {
+  private readonly channels: Channel[]
+
+  constructor(data: number, channels: Channel[]) {
+    super(data)
+    this.channels = channels
+  }
+
+  public read(): Word {
+    const value = this.channels[this.address].pull()
+    io('IN %O', value)
+    return value
+  }
+
+  public write(value: Word): void {
+    io('OUT %O', value)
+    this.channels[this.address].push(value)
   }
 }
