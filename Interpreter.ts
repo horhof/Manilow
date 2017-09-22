@@ -99,7 +99,7 @@ export class Interpreter {
         }
 
         if (!op.deref) {
-          return new Addr(op.value), this.memory)
+          return new Addr(op.value, this.memory)
         }
 
         return new Ptr(op.value, this.memory)

@@ -4,6 +4,7 @@ const log = Debug('Mel:Word')
 const io = Debug('Mel:I/O')
 
 export type Word = number
+export type Label = string
 
 /**
  * An operand whose value is directly held inside the instance.
