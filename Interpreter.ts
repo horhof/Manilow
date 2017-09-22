@@ -15,7 +15,6 @@ export interface IsaEntry {
 // Unary predicates.
 function zero(a: Word): boolean { return eq(a, 0) }
 function nonZero(a: Word): boolean { return neq(a, 0) }
-//nction nonZero(a: Word): boolean { log(a); return neq(a, 0) }
 function positive(a: Word): boolean { return gte(a, 0) }
 function negative(a: Word): boolean { return lt(a, 0) }
 
@@ -83,33 +82,33 @@ export class Interpreter {
       op = this.lookupCode(code)
 
       if (op) {
-        log(`#%d: %s (Machine)`, ip.read(), op.code)
+        log(`#%d: %s (Interp): %o`, ip.read(), op.code, args)
       }
       else {
         op = this.kernel.lookupCode(code)
         if (op)
-          log(`#%d: %s (Kernel)`, ip.read(), op.code)
+          log(`#%d: %s (Kernel): %o`, ip.read(), op.code, args)
       }
   
-      if (!op) {
+      if (!op)
         throw new Error(`Operation "${code}" not found.`)
-      }
 
       const finalArgs = args.map(op => {
         if (op.type === OpType.IMM) {
-          return new Value(op.value)
+          return new Value(Number(op.value))
         }
 
         if (!op.deref) {
-          return new Addr(op.value, this.memory)
+          return new Addr(op.value), this.memory)
         }
 
         return new Ptr(op.value, this.memory)
       })
 
       op.fn(...finalArgs)
-      log(`Registers=%O`, this.registers.io)
-      log(`Memory=%O`, this.memory)
+      log(`> Input=%o`, this.registers.io[0])
+      log(`> Output=%o`, this.registers.io[1])
+      log(`> Memory=%o`, this.memory)
 
       if (ip.read() >= program.length) {
         log(`Program terminated on instruction #%o`, ip.read())
@@ -146,6 +145,10 @@ export class Interpreter {
     ip.write(addr)
   }
 
+  /**
+   * Return a binary function taking a `src` to examine and a `dest` to jump
+   * to, using `predicate` to decide to jump or not.
+   */
   private jumpIf(predicate: Function) {
     return (src: Value | Addr, dest: Addr = this.registers.table.accum) => {
       if (!predicate(src.read())) {

@@ -1,5 +1,7 @@
 import * as Debug from 'debug'
 
+import { Word, Label } from './Word'
+
 const log = Debug('Mel:Parser')
 
 /** The fully-assembled program that I produce. */
@@ -34,7 +36,7 @@ export interface Argument {
 /** Each line is an instruction. */
 export interface Instruction {
   no: number
-  labels: string[]
+  labels: Label[]
   code: string
   args: Argument[]
   comment?: string
@@ -66,6 +68,8 @@ export class Parser {
   static ARG_SEP = `,`
 
   static COMMENT_SEP = `#`
+
+  static DEREF_OPERATOR = `*`
 
   private instructionCount: number
 
@@ -153,10 +157,14 @@ export class Parser {
 
         log(`#getOpers> OpText=%O`, opText)
 
+        const firstChar = opText[0]
+
         // E.g. 0d1300 (decimal 1300), 0x4A00 (hex 4A00).
-        const immediate = opText.match(/^0[a-z]/)
+        const immediate = /^0[a-z]/.test(opText)
         // E.g. *17 (the value pointed to by address 17).
-        const deref = opText[0] === '*'
+        const deref = firstChar === Parser.DEREF_OPERATOR
+        // E.g. startLoop
+        const label = /^[a-z]/.test(firstChar)
         // E.g. 4800 (the value in address 4800).
         const addr = !immediate && !deref
 
