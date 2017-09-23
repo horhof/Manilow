@@ -33,7 +33,7 @@ function lte(a: Word, b: Word): boolean { return a < b }
  * - Lookup code: op code = ISA entry
  */
 export class Interpreter {
-  static MAX_OPS = 25
+  static MAX_OPS = 5
 
   private registers: Registers
 
@@ -117,6 +117,8 @@ export class Interpreter {
         return new Ptr(Number(op.value), this.memory)
       })
 
+      log(`#run> #%d %s (%s): %o`, ip.read(), code, mechanism, boundArgs.map(a => a.inspect))
+
       op.fn(...boundArgs)
       log(`> Input=%o`, this.registers.io[0])
       log(`> Output=%o`, this.registers.io[1])
@@ -168,6 +170,7 @@ export class Interpreter {
    */
   private jumpIf(predicate: Function) {
     return (src: Value | Addr, dest: Addr = this.registers.table.accum) => {
+      log(`Examining source %o (=${src.read()}) to see if I should jump to dest %o...`, src, dest);
       if (!predicate(src.read())) {
         log(`Predicate was false. No jump.`)
         return

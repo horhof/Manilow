@@ -77,7 +77,11 @@ export class Parser {
 
   static DEREF_OPERATOR = `*`
 
+  static ADDR_OPERATOR = `&`
+
   private opCount: number
+
+  private labelMap: { [index: string]: number }
 
   /**
    * I transform a string of source code into a list of instructions.
@@ -86,6 +90,7 @@ export class Parser {
     const lines = source.split(Parser.OP_TERM)
     const ops = this.assignLabels(lines)
     log('These are the labels', ops)
+    log('Map of labels', this.labelMap)
     return <Op[]>ops.map(this.getOp.bind(this))
   }
 
@@ -94,12 +99,15 @@ export class Parser {
    * labels. (Because labels can be referenced before they're defined.) The
    * text of the operations is unparsed at this stage.
    */
+  //ivate assignLabels(lines: string[]): { ops: LabelledOp[], labelMap: { [index: string]: number } } {
   private assignLabels(lines: string[]): LabelledOp[] {
     this.opCount = 1
+    this.labelMap = {}
 
     let labels: Label[] = []
 
-    return <LabelledOp[]>lines
+    // The first pass places the labels directly on the LabelledOp objects.
+    const ops = <LabelledOp[]>lines
       .map((line: string): LabelledOp | void => {
         const no = this.opCount
         const { label, source } = this.parseLine(line)
@@ -115,12 +123,21 @@ export class Parser {
         }
       })
       .filter(x => x)
-  }
+    
+    // The second pass collects the labels into a map where the text of the label
+    // maps to the number of the instruction.
+    ops.forEach(op => {
+      log(`Looking at op #%d for labels... LabelCount=%d`, op.no, labels.length)
+      if (op.labels.length > 0) {
+        op.labels.forEach(label => {
+          this.labelMap[label] = op.no
+          log(`Assigning label %s to op #%d.`, label, op.no)
+        })
+      }
+    })
 
-  /**
-   * I resolve the text of the labels into 
-   */
-  private resolveLabels() {
+    //turn { ops, labelMap }
+    return ops
   }
 
   /**
@@ -196,6 +213,9 @@ export class Parser {
         // E.g. *17 (the value pointed to by address 17).
         const deref = firstChar === Parser.DEREF_OPERATOR
 
+        // E.g. &record (the address of the label "record").
+        const addressOf = firstChar === Parser.ADDR_OPERATOR
+
         // E.g. startLoop
         const label = /^[a-z]/.test(firstChar)
 
@@ -206,9 +226,10 @@ export class Parser {
           return this.parseImmediate(argText)
 
         if (label) {
+          const value = this.labelMap[argText]
           return {
             type: ArgType.LABEL,
-            value: argText
+            value
           }
         }
 

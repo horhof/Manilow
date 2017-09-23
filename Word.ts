@@ -21,6 +21,10 @@ export class Value {
     this.memory = memory || []
   }
 
+  public get inspect(): string {
+    return `Immediate value 0d${this.data}`
+  }
+
   public read(): Word {
     return this.data
   }
@@ -44,6 +48,10 @@ export class Addr extends Value {
     return this.data
   }
 
+  public get inspect(): string {
+    return `Data @${this.address} (= ${this.read()})`
+  }
+
   public read(): Word {
     return this.memory[this.address] || Value.ZERO
   }
@@ -60,6 +68,10 @@ export class Addr extends Value {
 export class Ptr extends Addr {
   protected get address(): number {
     return this.memory[this.data]
+  }
+
+  public get inspect(): string {
+    return `Pointer @${this.data} (${this.address} = ${this.read()})`
   }
 }
 
@@ -92,6 +104,10 @@ export class Port extends Addr {
   constructor(data: number, channels: Channel[]) {
     super(data)
     this.channels = channels
+  }
+
+  public get inspect(): string {
+    return `Port @${this.address} ( = ${this.read()})`
   }
 
   public read(): Word {
