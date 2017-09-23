@@ -2,7 +2,7 @@ import * as Debug from 'debug'
 
 import { Word, Value, Addr, Ptr } from './Word'
 import { Registers } from './Registers'
-import { Instruction, OpType } from './Parser'
+import { Op, ArgType } from './Parser'
 import { Kernel } from './Kernel'
 
 const log = Debug('Mel:Interpreter')
@@ -33,6 +33,8 @@ function lte(a: Word, b: Word): boolean { return a < b }
  * - Lookup code: op code = ISA entry
  */
 export class Interpreter {
+  static MAX_OPS = 25
+
   private registers: Registers
 
   private memory: Word[]
@@ -64,18 +66,21 @@ export class Interpreter {
    * (if it exists), instantiate the instruction's operands as values or address
    * and execute the instruction's function.
    */
-  public run(program: Instruction[]): void {
-    let now = 0
-    const max = 100
+  public run(program: Op[]): void {
+    let loopCounter = 0
 
     const labels = this.getInstructionLabels(program)
 
-    while (now < max) {
-      now++
-
+    while (true) {
       const ip = this.registers.table.ip
+      const instruction = program.find(i => i.no === ip.read())
 
-      const { code, args, comment } = program.find(i => i.no === ip.read())
+      log(`#run> IP=%o Instruction=%o`, ip.read(), instruction)
+
+      if (!instruction)
+        throw new Error(`Instruction ${ip.read()} not found.`)
+
+      const { code, args, comment } = instruction
 
       let op: IsaEntry | void
 
@@ -94,15 +99,15 @@ export class Interpreter {
         throw new Error(`Operation "${code}" not found.`)
 
       const finalArgs = args.map(op => {
-        if (op.type === OpType.IMM) {
+        if (op.type === ArgType.IMM) {
           return new Value(Number(op.value))
         }
 
         if (!op.deref) {
-          return new Addr(op.value, this.memory)
+          return new Addr(Number(op.value), this.memory)
         }
 
-        return new Ptr(op.value, this.memory)
+        return new Ptr(Number(op.value), this.memory)
       })
 
       op.fn(...finalArgs)
@@ -111,16 +116,22 @@ export class Interpreter {
       log(`> Memory=%o`, this.memory)
 
       if (ip.read() >= program.length) {
-        log(`Program terminated on instruction #%o`, ip.read())
+        log(`End of program. Terminated on op #%o`, ip.read())
         break
       }
       else {
         this.registers.table.ip.write(ip.read() + 1)
       }
+
+      loopCounter++
+      if (loopCounter > Interpreter.MAX_OPS) {
+        log(`Too many ops. Terminated on op #%o`, ip.read())
+        break
+      }
     }
   }
 
-  private getInstructionLabels(instructions: Instruction[]): { [label: string]: number } {
+  private getInstructionLabels(instructions: Op[]): { [label: string]: number } {
     const table: { [label: string]: number } = {}
 
     instructions

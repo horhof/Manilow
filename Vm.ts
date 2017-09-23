@@ -1,21 +1,18 @@
 import * as fs from 'fs'
 import * as Debug from 'debug'
 
-import { Parser, OpType } from './Parser'
+import { Parser, ArgType } from './Parser'
 import { Word, Value, Addr, Ptr, Channel } from './Word'
 import { Kernel, IsaEntry } from './Kernel'
 import { Registers } from './Registers'
 import { Interpreter } from './Interpreter'
 
-const log = Debug('Mel:Vm')
+const log = Debug('Mel:VMachine')
 
-log(`Creating parser...`)
 const parser = new Parser()
 
 log(`Reading source code...`)
 const source = fs.readFileSync('go.asm', 'utf-8')
-
-log(`Parsing source code...`)
 const program = parser.getProgram(source)
 
 log(`Initializing memory...`)

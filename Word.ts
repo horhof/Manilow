@@ -18,7 +18,7 @@ export class Value {
 
   constructor(data: number, memory?: Word[]) {
     this.data = data || Value.ZERO
-    this.memory = memory
+    this.memory = memory || []
   }
 
   public read(): Word {

@@ -5,19 +5,21 @@ import { Word, Addr, Port, Channel } from './Word'
 const log = Debug('Mel:Registers')
 
 export class Registers {
-  public readonly table: { [name: string]: Addr } = {
-    accum: null,
-    data: null,
-    count: null,
-    dest: null,
-    src: null,
-    input: null,
-    output: null,
-    flags: null,
-    ip: null,
-    stack: null,
-    base: null
-  }
+  public readonly table: { [name: string]: Addr }
+
+  private names = [
+    `accum`,
+    `data`,
+    `count`,
+    `dest`,
+    `src`,
+    `input`,
+    `output`,
+    `flags`,
+    `ip`,
+    `stack`,
+    `base`
+  ]
 
   public readonly io: Channel[]
 
@@ -26,17 +28,15 @@ export class Registers {
   constructor(memory: Word[], io: Channel[]) {
     this.io = io
 
-    const names = Object.keys(this.table)
-
     let port = 0
+    this.table = {}
 
-    for (let addr = 0; addr < Registers.MAX; addr++) {
-      const name = names[addr]
+    this.names.forEach((name, addr) => {
       if (name === 'input' || name === 'output')
         this.table[name] = new Port(port++, io)
       else
         this.table[name] = new Addr(addr, memory)
-    }
+    })
 
     this.table.ip.write(1)
   }

@@ -3,11 +3,19 @@
     "module": "commonjs",
     "target": "es2016",
     "noImplicitAny": true,
+    "strictNullChecks": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
     "removeComments": true,
     "preserveConstEnums": true,
     "sourceMap": true
   },
   "files": [
-    "Vm.ts"
+    "Vm.ts",
+    "Parser.ts",
+    "Interpreter.ts",
+    "Registers.ts",
+    "Kernel.ts",
+    "Word.ts"
   ]
 }
