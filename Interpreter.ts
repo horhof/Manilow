@@ -91,7 +91,6 @@ export class Interpreter {
       let op: IsaEntry | void
 
       op = this.lookupCode(code)
-
       if (op) {
         mechanism = Mechanism.INTERP
       }
@@ -106,7 +105,7 @@ export class Interpreter {
 
       log(`#run> #%d %s (%s): %o`, ip.read(), code, mechanism, args)
 
-      const finalArgs = args.map(op => {
+      const boundArgs = args.map(op => {
         if (op.type === ArgType.IMM) {
           return new Value(Number(op.value))
         }
@@ -118,7 +117,7 @@ export class Interpreter {
         return new Ptr(Number(op.value), this.memory)
       })
 
-      op.fn(...finalArgs)
+      op.fn(...boundArgs)
       log(`> Input=%o`, this.registers.io[0])
       log(`> Output=%o`, this.registers.io[1])
       log(`> Memory=%o`, this.memory)
@@ -127,15 +126,14 @@ export class Interpreter {
         log(`End of program. Terminated on op #%o`, ip.read())
         break
       }
-      else {
-        this.registers.table.ip.write(ip.read() + 1)
-      }
 
       loopCounter++
       if (loopCounter > Interpreter.MAX_OPS) {
         log(`Too many ops. Terminated on op #%o`, ip.read())
         break
       }
+
+      this.registers.table.ip.write(ip.read() + 1)
     }
   }
 

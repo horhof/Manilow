@@ -56,6 +56,13 @@ export interface Op {
  * 
  * API:
  * - Get program: source = ops
+ * 
+ * Private API:
+ * - Assign labels: lines = labelled ops
+ * - Parse line: line = [label], [source]
+ * - Get op: labelled op = op
+ * - Get args: list of arg text = arg list
+ * - Parse immediate: argument text = arg
  */
 export class Parser {
   static OP_TERM = `\n`
@@ -78,7 +85,7 @@ export class Parser {
   public getProgram(source: string): Op[] {
     const lines = source.split(Parser.OP_TERM)
     const ops = this.assignLabels(lines)
-    log(ops)
+    log('These are the labels', ops)
     return <Op[]>ops.map(this.getOp.bind(this))
   }
 
@@ -108,6 +115,12 @@ export class Parser {
         }
       })
       .filter(x => x)
+  }
+
+  /**
+   * I resolve the text of the labels into 
+   */
+  private resolveLabels() {
   }
 
   /**
@@ -212,9 +225,18 @@ export class Parser {
   }
 
   /**
-   * I parse a string like `0d10` or `0x4A` to an immediate operand.
+   * I parse a string like `0d10` or `0x4A` to an immediate argument.
+   * 
+   * Supported formats:
+   * 
+   * | Code  |  Base   | Radix |
+   * | :---: | ------- | :---: |
+   * |  `b`  | Binary  | 2     |
+   * |  `o`  | Octal   | 8     |
+   * |  `d`  | Decimal | 10    |
+   * |  `x`  | Hex     | 16    |
    */
-  public parseImmediate(text: string) {
+  public parseImmediate(text: string): Arg {
     const code = text[1]
 
     const radixTable: { [index: string]: number } = {
