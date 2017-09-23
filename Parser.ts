@@ -78,6 +78,7 @@ export class Parser {
   public getProgram(source: string): Op[] {
     const lines = source.split(Parser.OP_TERM)
     const ops = this.assignLabels(lines)
+    log(ops)
     return <Op[]>ops.map(this.getOp.bind(this))
   }
 
@@ -97,11 +98,9 @@ export class Parser {
         const { label, source } = this.parseLine(line)
 
         if (label) {
-        //log(`#runFirstPass> A label. Pushing to the list (%o)...`, labels)
           labels.push(label)
         }
         else if (source) {
-        //log(`#runFirstPass> OpText. No=%o Labels=%o OpText=%o`, no, labels, opText)
           const firstPass = { no, labels, source }
           labels = []
           this.opCount++
@@ -156,8 +155,8 @@ export class Parser {
     const [opText, comment] = source.split(Parser.COMMENT_PREFIX).map(x => x.trim())
     const split = opText.split(Parser.CODE_TERM)
     const code = split[0]
-    const argText = split.slice(1).join(``).split(Parser.ARG_SEP)
-  //log(`#getOp> Code=%o ArgText=%o Comment=%o`, code, argText, comment)
+    const argText = split.slice(1).join(``).split(Parser.ARG_SEP).filter(x => x)
+    log(`#getOp> Code=%o ArgText=%o Comment=%o`, code, argText, comment)
     const args = this.getArgs(argText)
 
     log(`#getOp> Comment=%O Code=%O Arg1=%o Arg2=%o Arg3=%o`, comment, code, args[0], args[1], args[2])

@@ -75,7 +75,13 @@ export class Interpreter {
       const ip = this.registers.table.ip
       const instruction = program.find(i => i.no === ip.read())
 
-      log(`#run> IP=%o Instruction=%o`, ip.read(), instruction)
+      enum Mechanism {
+        NONE = 'None',
+        KERNEL = 'Kernel',
+        INTERP = 'Interp'
+      }
+
+      let mechanism = Mechanism.NONE
 
       if (!instruction)
         throw new Error(`Instruction ${ip.read()} not found.`)
@@ -87,16 +93,18 @@ export class Interpreter {
       op = this.lookupCode(code)
 
       if (op) {
-        log(`#%d: %s (Interp): %o`, ip.read(), op.code, args)
+        mechanism = Mechanism.INTERP
       }
       else {
         op = this.kernel.lookupCode(code)
         if (op)
-          log(`#%d: %s (Kernel): %o`, ip.read(), op.code, args)
+          mechanism = Mechanism.KERNEL
       }
   
       if (!op)
         throw new Error(`Operation "${code}" not found.`)
+
+      log(`#run> #%d %s (%s): %o`, ip.read(), code, mechanism, args)
 
       const finalArgs = args.map(op => {
         if (op.type === ArgType.IMM) {
