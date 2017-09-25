@@ -1,4 +1,12 @@
 import * as fs from 'fs'
+
+process.env['DEBUG'] = [
+  'Mel:Vm',
+//'Mel:Parser',
+  'Mel:Memory',
+  'Mel:Interpreter',
+  'Mel:I/O'
+].join(',')
 import * as Debug from 'debug'
 
 import { Parser, ArgType } from './Parser'
@@ -7,7 +15,7 @@ import { Kernel, IsaEntry } from './Kernel'
 import { Registers } from './Registers'
 import { Interpreter } from './Interpreter'
 
-const log = Debug('Mel:VM')
+const log = Debug('Mel:Vm')
 
 const parser = new Parser()
 
@@ -34,15 +42,10 @@ const interpreter = new Interpreter(registers, memory, kernel)
 
 log(`Program=%O`, program)
 
-log(`Before:`)
-log(`Memory=%O`, memory)
-log(`Input=%O`, input)
-log(`Output=%O`, output)
-
 log(`Running program...`)
 interpreter.run(program)
 
-log(`After:`)
+log(`Final state:`)
 log(`Memory=%O`, memory)
 log(`Input=%O`, input)
 log(`Output=%O`, output)

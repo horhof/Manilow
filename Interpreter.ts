@@ -53,11 +53,13 @@ export class Interpreter {
 
   private program: Op[]
 
+  private halt = false
+
   private isa: IsaEntry[] = [
     { code: 'JUMP', fn: this.jump.bind(this) },
     { code: 'JZ', fn: this.jumpIf(zero) },
     { code: 'JNZ', fn: this.jumpIf(nonZero) },
-    { code: 'HCF', fn: () => { debug(`HCF. Exiting...`); process.exit(0) } }
+    { code: 'HCF', fn: () => { debug(`HCF. Exiting...`); this.halt = true } }
     /*
     { code: 'JNZ', fn: (...x: any[]) => {
       log(x)
@@ -83,10 +85,13 @@ export class Interpreter {
 
     if (process.env['STEP']) {
       info(`Running program in step-by-step mode. Press enter to step forward.`)
-      process.stdin.on('data', () => this.step())
+      process.stdin.on('data', () => {
+        if (!this.halt)
+          this.step()
+      })
     }
     else
-      while (true)
+      while (!this.halt)
         this.step()
   }
 
@@ -159,16 +164,15 @@ export class Interpreter {
     this.registers.table.ip.write(newNo)
 
     if (newNo > this.program.length) {
-      debug(`End of program. Terminated on op #%o`, oldNo)
-      process.exit(0)
+      info(`End of program. Terminated on op #%o`, oldNo)
+      this.halt = true
     }
 
     this.loopCounter++
     if (this.loopCounter > Interpreter.MAX_OPS) {
-      debug(`Too many ops. Terminated on op #%o`, oldNo)
-      process.exit(1)
+      info(`Too many ops. Terminated on op #%o`, oldNo)
+      this.halt = true
     }
-
   }
 
   private getInstructionLabels(instructions: Op[]): { [label: string]: number } {
