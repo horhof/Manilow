@@ -82,7 +82,7 @@ export class Ptr extends Addr {
 }
 
 export class Channel {
-  private data: Word[]
+  public data: Word[]
 
   constructor(data: Word[] = []) {
     this.data = data

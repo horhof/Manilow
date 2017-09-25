@@ -5,8 +5,10 @@ import { Registers } from './Registers'
 import { Op, ArgType } from './Parser'
 import { Kernel } from './Kernel'
 
-const log = Debug('Mel:Interp')
-const debug = Debug('Mel:Interp:Debug')
+const info = Debug('Mel:Interpreter')
+const memoryDebug = Debug('Mel:Memory')
+
+const debug = Debug('Mel:Debug:Interpreter')
 
 export interface IsaEntry {
   code: string
@@ -15,12 +17,12 @@ export interface IsaEntry {
 
 // Unary predicates.
 function zero(a: Word): boolean {
-  log(`zero> a=%o`, a)
+  debug(`zero> a=%o`, a)
   return eq(a, 0)
 }
 //nction nonZero(a: Word): boolean { return neq(a, 0) }
 function nonZero(a: Word): boolean {
-  log(`nonZero> a=%o Return=%o`, a, neq(a, 0))
+  debug(`nonZero> a=%o Return=%o`, a, neq(a, 0))
   return neq(a, 0)
 }
 function positive(a: Word): boolean { return gte(a, 0) }
@@ -55,7 +57,7 @@ export class Interpreter {
     { code: 'JUMP', fn: this.jump.bind(this) },
     { code: 'JZ', fn: this.jumpIf(zero) },
     { code: 'JNZ', fn: this.jumpIf(nonZero) },
-    { code: 'HCF', fn: () => { log(`HCF. Exiting...`); process.exit(0) } }
+    { code: 'HCF', fn: () => { debug(`HCF. Exiting...`); process.exit(0) } }
     /*
     { code: 'JNZ', fn: (...x: any[]) => {
       log(x)
@@ -75,10 +77,14 @@ export class Interpreter {
   }
 
   public run(program: Op[]): void {
+    info(`Running program of %d instructions...`, program.length)
+
     this.program = program
 
-    if (process.env['STEP'])
+    if (process.env['STEP']) {
+      info(`Running program in step-by-step mode. Press enter to step forward.`)
       process.stdin.on('data', () => this.step())
+    }
     else
       while (true)
         this.step()
@@ -92,7 +98,8 @@ export class Interpreter {
   public step(): void {
     const no = this.registers.table.ip.read()
     const instruction = this.program.find(i => i.no === no)
-    log(`#step> IP=%o Op=%o`, no, instruction)
+    debug(`#step> IP=%o Op=%o`, no, instruction)
+    info(`Running instruction %d/%d...`, no, this.program.length)
 
     enum Mechanism {
       NONE = 'None',
@@ -122,7 +129,7 @@ export class Interpreter {
     if (!op)
       throw new Error(`Operation "${code}" not found.`)
 
-    log(`#run> #%d %s (%s): %o`, no, code, mechanism, args)
+    debug(`#run> #%d %s (%s): %o`, no, code, mechanism, args)
 
     const boundArgs = args.map(op => {
       if (op.type === ArgType.IMM)
@@ -137,25 +144,28 @@ export class Interpreter {
       return new Ptr(Number(op.value), this.memory)
     })
 
-    log(`#run> #%d %s (%s): %o`, no, code, mechanism, boundArgs.map(a => a.inspect))
+    if (boundArgs.length > 0)
+      info(`%s (%s): %o`, code, mechanism, boundArgs.map(a => a.inspect))
+    else
+      info(`%s (%s)`, code, mechanism)
 
     op.fn(...boundArgs)
-    debug(`Input=%o`, this.registers.io[0])
-    debug(`Output=%o`, this.registers.io[1])
-    debug(`Memory=%o`, this.memory)
+    memoryDebug(`Input=%o`, this.registers.io[0].data)
+    memoryDebug(`Output=%o`, this.registers.io[1].data)
+    memoryDebug(`Memory=%o`, this.memory)
 
     const oldNo = this.registers.table.ip.read()
     const newNo = oldNo + 1
     this.registers.table.ip.write(newNo)
 
     if (newNo > this.program.length) {
-      log(`End of program. Terminated on op #%o`, oldNo)
+      debug(`End of program. Terminated on op #%o`, oldNo)
       process.exit(0)
     }
 
     this.loopCounter++
     if (this.loopCounter > Interpreter.MAX_OPS) {
-      log(`Too many ops. Terminated on op #%o`, oldNo)
+      debug(`Too many ops. Terminated on op #%o`, oldNo)
       process.exit(1)
     }
 
@@ -183,7 +193,7 @@ export class Interpreter {
   private jump(dest: Value): void {
     const addr = dest.read()
     const ip = this.registers.table.ip
-    ip.write(addr)
+    ip.write(addr - 1)
   }
 
   /**
@@ -196,17 +206,17 @@ export class Interpreter {
      * @param src The thing being examined. Defaults to accum.
      */
     return (dest: OpAddr, src: Addr = this.registers.table.accum) => {
-      log(`Examining source address %o (value is %o) to see if I should jump to dest %o...`, src.address , src.read(), dest.read());
+      debug(`Examining source address %o (value is %o) to see if I should jump to dest %o...`, src.address , src.read(), dest.read());
       if (!predicate(src.read())) {
-        log(`Predicate was false. No jump.`)
+        debug(`Predicate was false. No jump.`)
         return
       }
 
       const addr = dest.read()
       const ip = this.registers.table.ip
-      log(`Predicate was true. Jumping from %d to %d...`, ip.read(), addr)
+      debug(`Predicate was true. Jumping from %d to %d...`, ip.read(), addr)
       ip.write(addr - 1)
-      log(`IP is now %o.`, ip.read())
+      debug(`IP is now %o.`, ip.read())
     }
   }
 }
