@@ -10,7 +10,7 @@ const log = Debug('Mel:Parser')
 export enum ArgType {
   IMM = 'IMM',
   ADDR = 'ADDR',
-  LABEL = 'LABEL'
+  OP_ADDR = 'OP_ADDR'
 }
 
 /**
@@ -216,8 +216,8 @@ export class Parser {
         // E.g. &record (the address of the label "record").
         const addressOf = firstChar === Parser.ADDR_OPERATOR
 
-        // E.g. startLoop
-        const label = /^[a-z]/.test(firstChar)
+        // E.g. startLoop (the number of the op labelled startLoop)
+        const opAddr = /^[a-z]/.test(firstChar)
 
         // E.g. 4800 (the value in address 4800).
         const addr = !immediate && !deref
@@ -225,10 +225,10 @@ export class Parser {
         if (immediate)
           return this.parseImmediate(argText)
 
-        if (label) {
+        if (opAddr) {
           const value = this.labelMap[argText]
           return {
-            type: ArgType.LABEL,
+            type: ArgType.OP_ADDR,
             value
           }
         }

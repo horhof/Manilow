@@ -7,7 +7,7 @@ import { Kernel, IsaEntry } from './Kernel'
 import { Registers } from './Registers'
 import { Interpreter } from './Interpreter'
 
-const log = Debug('Mel:VMachine')
+const log = Debug('Mel:VM')
 
 const parser = new Parser()
 

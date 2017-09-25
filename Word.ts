@@ -35,6 +35,12 @@ export class Value {
   }
 }
 
+export class OpAddr extends Value {
+  public get inspect(): string {
+    return `Op #${this.data}`
+  }
+}
+
 /**
  * An operand whose value is the address where the value is held
  * and needs to be read and can be written.
@@ -44,7 +50,7 @@ export class Value {
  * - Write: word.
  */
 export class Addr extends Value {
-  protected get address(): number {
+  public get address(): number {
     return this.data
   }
 
@@ -66,7 +72,7 @@ export class Addr extends Value {
  * address where the value is held.
  */
 export class Ptr extends Addr {
-  protected get address(): number {
+  public get address(): number {
     return this.memory[this.data]
   }
 
