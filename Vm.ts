@@ -45,8 +45,10 @@ log(`Program=%O`, program)
 
 log(`Running program...`)
 interpreter.run(program)
-
-log(`Final state:`)
-log(`Memory=%O`, memory)
-log(`Input=%O`, input)
-log(`Output=%O`, output)
+  .then(() => {
+    log(`Final state:`)
+    log(`Memory=%O`, memory)
+    log(`Input=%O`, input)
+    log(`Output=%O`, output)
+    process.exit(0)
+  })

@@ -77,21 +77,33 @@ export class Interpreter {
     this.kernel = kernel
   }
 
-  public run(program: Op[]): void {
-    info(`Running program of %d instructions...`, program.length)
+  public run(program: Op[]): Promise<void> {
+    return new Promise((resolve, reject) => {
+      info(`Running program of %d instructions...`, program.length)
 
-    this.program = program
+      this.program = program
 
-    if (process.env['STEP']) {
-      info(`Running program in step-by-step mode. Press enter to step forward.`)
-      process.stdin.on('data', () => {
-        if (!this.halt)
+      if (process.env['STEP']) {
+        info(`Running program in step-by-step mode. Press enter to step forward.`)
+        process.stdin.on('data', () => {
+          if (this.halt) {
+            info(`Halt in step-by-step mode. Resolving...`)
+            resolve()
+          }
+          else {
+            this.step()
+          }
+        })
+      }
+      else {
+        info(`Running program in automatic mode.`)
+        while (!this.halt) {
           this.step()
-      })
-    }
-    else
-      while (!this.halt)
-        this.step()
+        }
+        info(`Halt in automatic mode. Resolving...`)
+        resolve()
+      }
+    })
   }
 
   /**

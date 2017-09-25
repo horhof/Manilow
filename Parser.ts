@@ -201,10 +201,15 @@ export class Parser {
     if (args.length < 1)
       return []
 
-    return args
-      .map((argText: string) => {
+    return <Arg[]>args
+      .map((argText: string): Arg | void => {
         argText = argText.trim()
       //log(`#getArgs> Text=%O`, argText)
+
+        if (argText.length < 0) {
+          log(`Empty argText`)
+          return
+        }
 
         const firstChar = argText[0]
 
@@ -244,6 +249,7 @@ export class Parser {
           deref
         }
       })
+      .filter(x => x)
   }
 
   /**
