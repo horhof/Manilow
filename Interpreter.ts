@@ -2,7 +2,7 @@ import * as Debug from 'debug'
 
 import { Word, Value, Addr, OpAddr, Ptr } from './Word'
 import { Registers } from './Registers'
-import { Op, ArgType } from './Parser'
+import { Instruction, ArgType } from './Parser'
 import { Kernel } from './Kernel'
 
 const info = Debug('Mel:Interpreter')
@@ -50,7 +50,7 @@ export class Interpreter {
 
   private kernel: Kernel
 
-  private program: Op[]
+  private program: Instruction[]
 
   private halt = false
 
@@ -77,7 +77,7 @@ export class Interpreter {
     this.kernel = kernel
   }
 
-  public run(program: Op[]): Promise<void> {
+  public run(program: Instruction[]): Promise<void> {
     return new Promise((resolve, reject) => {
       info(`Running program of %d instructions...`, program.length)
 
@@ -186,7 +186,7 @@ export class Interpreter {
     }
   }
 
-  private getInstructionLabels(instructions: Op[]): { [label: string]: number } {
+  private getInstructionLabels(instructions: Instruction[]): { [label: string]: number } {
     const table: { [label: string]: number } = {}
 
     instructions

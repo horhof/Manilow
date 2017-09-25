@@ -43,7 +43,7 @@ export interface LabelledOp {
   source: string
 }
 
-export interface Op {
+export interface Instruction {
   no: number
   labels: any[]  // TODO: Type as Label[].
   code: string
@@ -65,33 +65,81 @@ export interface Op {
  * - Parse immediate: argument text = arg
  */
 export class Parser {
-  static OP_TERM = `\n`
+  /**
+   * ```asm
+   * DEC 0
+   * #    ^ End of line is the end of the instruction.
+   * ```
+   */
+  static INSTRUCTION_SUFFIX = `\n`
 
-  static LABEL_TERM = `:`
+  /**
+   * ```asm
+   * start program: 
+   * #            ^ Colon terminates a label.
+   * ```
+   */
+  static LABEL_SUFFIX = `:`
 
-  static CODE_TERM = ` `
+  /**
+   * ```asm
+   * ADD 0d1, 1  
+   * #  ^ Operations end with a space.
+   * ```
+   */
+  static OP_SUFFIX = ` `
 
+  /**
+   * ```asm
+   * SUB 0x10, 1
+   * #       ^ Arguments are separated by commas.
+   * ```
+   */
   static ARG_SEP = `,`
 
+  /**
+   * ```asm
+   * HCF  # End program.
+   * #    ^ Introduce comments with a pound sign.
+   * ```
+   */
   static COMMENT_PREFIX = `#`
 
+  /**
+   * ```asm
+   * ADD *SP
+   * #   ^ Dereference addresses with an asterisk.
+   * ```
+   */
   static DEREF_OPERATOR = `*`
 
+  /**
+   * ```asm
+   * COPYTO &record, 0
+   * #      ^ Get the address of a variable with an ampersand.
+   * ```
+   */
   static ADDR_OPERATOR = `&`
 
-  private opCount: number
+  /**
+   * During the first pass, I keep track of the number of instructions so that
+   * labels can be assigned to a given instruction number.
+   */
+  private instructionCount: number
 
+  /**
+   * During the first pass, I build up a map of all labels with the number of
+   * the instruction that they point to.
+   */
   private labelMap: { [index: string]: number }
 
   /**
    * I transform a string of source code into a list of instructions.
    */
-  public getProgram(source: string): Op[] {
-    const lines = source.split(Parser.OP_TERM)
-    const ops = this.assignLabels(lines)
-    log('These are the labels', ops)
-    log('Map of labels', this.labelMap)
-    return <Op[]>ops.map(this.getOp.bind(this))
+  public getProgram(source: string): Instruction[] {
+    const lines = source.split(Parser.INSTRUCTION_SUFFIX)
+    const instructions = this.assignLabels(lines)
+    return <Instruction[]>instructions.map(this.getOp.bind(this))
   }
 
   /**
@@ -99,9 +147,8 @@ export class Parser {
    * labels. (Because labels can be referenced before they're defined.) The
    * text of the operations is unparsed at this stage.
    */
-  //ivate assignLabels(lines: string[]): { ops: LabelledOp[], labelMap: { [index: string]: number } } {
   private assignLabels(lines: string[]): LabelledOp[] {
-    this.opCount = 1
+    this.instructionCount = 1
     this.labelMap = {}
 
     let labels: Label[] = []
@@ -109,7 +156,7 @@ export class Parser {
     // The first pass places the labels directly on the LabelledOp objects.
     const ops = <LabelledOp[]>lines
       .map((line: string): LabelledOp | void => {
-        const no = this.opCount
+        const no = this.instructionCount
         const { label, source } = this.parseLine(line)
 
         if (label) {
@@ -118,7 +165,7 @@ export class Parser {
         else if (source) {
           const firstPass = { no, labels, source }
           labels = []
-          this.opCount++
+          this.instructionCount++
           return firstPass
         }
       })
@@ -166,7 +213,7 @@ export class Parser {
       return { label, source }
 
     const lastChar = line.slice(-1)
-    const isLabel = lastChar === Parser.LABEL_TERM
+    const isLabel = lastChar === Parser.LABEL_SUFFIX
 
     if (isLabel)
       label = line.slice(0, -1)
@@ -179,11 +226,11 @@ export class Parser {
   /**
    * I take the partially parsed instruction and return the final instruction.
    */
-  private getOp(labelledOp: LabelledOp): Op {
+  private getOp(labelledOp: LabelledOp): Instruction {
     const { no, labels, source } = labelledOp
 
     const [opText, comment] = source.split(Parser.COMMENT_PREFIX).map(x => x.trim())
-    const split = opText.split(Parser.CODE_TERM)
+    const split = opText.split(Parser.OP_SUFFIX)
     const code = split[0]
     const argText = opText.replace(`${code} `, '')
     const textArgs = argText.split(Parser.ARG_SEP).filter(x => x)
