@@ -5,7 +5,8 @@ import { Registers } from './Registers'
 import { Op, ArgType } from './Parser'
 import { Kernel } from './Kernel'
 
-const log = Debug('Mel:Interpreter')
+const log = Debug('Mel:Interp:Log')
+const debug = Debug('Mel:Interp:Debug')
 
 export interface IsaEntry {
   code: string
@@ -120,9 +121,9 @@ export class Interpreter {
       log(`#run> #%d %s (%s): %o`, ip.read(), code, mechanism, boundArgs.map(a => a.inspect))
 
       op.fn(...boundArgs)
-      log(`> Input=%o`, this.registers.io[0])
-      log(`> Output=%o`, this.registers.io[1])
-      log(`> Memory=%o`, this.memory)
+      debug(`Input=%o`, this.registers.io[0])
+      debug(`Output=%o`, this.registers.io[1])
+      debug(`Memory=%o`, this.memory)
 
       if (ip.read() >= program.length) {
         log(`End of program. Terminated on op #%o`, ip.read())
@@ -169,7 +170,11 @@ export class Interpreter {
    * to, using `predicate` to decide to jump or not.
    */
   private jumpIf(predicate: Function) {
-    return (src: Value | Addr, dest: Addr = this.registers.table.accum) => {
+    /**
+     * @param src The thing being examined.
+     * @param dest The address being jumped to.
+     */
+    return (src: Addr = this.registers.table.accum, dest: Addr) => {
       log(`Examining source %o (=${src.read()}) to see if I should jump to dest %o...`, src, dest);
       if (!predicate(src.read())) {
         log(`Predicate was false. No jump.`)

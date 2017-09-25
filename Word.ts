@@ -22,7 +22,7 @@ export class Value {
   }
 
   public get inspect(): string {
-    return `Immediate value 0d${this.data}`
+    return `Immediate ${this.data}`
   }
 
   public read(): Word {
@@ -49,7 +49,7 @@ export class Addr extends Value {
   }
 
   public get inspect(): string {
-    return `Data @${this.address} (= ${this.read()})`
+    return `Address ${this.address} (value is ${this.read()})`
   }
 
   public read(): Word {
@@ -71,7 +71,7 @@ export class Ptr extends Addr {
   }
 
   public get inspect(): string {
-    return `Pointer @${this.data} (${this.address} = ${this.read()})`
+    return `Pointer ${this.data} (address is ${this.address}, value is ${this.read()})`
   }
 }
 
