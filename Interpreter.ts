@@ -42,6 +42,8 @@ export class Interpreter {
 
   private kernel: Kernel
 
+  private program: Op[]
+
   private isa: IsaEntry[] = [
     { code: 'JUMP', fn: this.jump.bind(this) },
     { code: 'JZ', fn: this.jumpIf(zero) },
@@ -56,10 +58,22 @@ export class Interpreter {
     */
   ]
 
+  private loopCounter = 0
+
   constructor(registers: Registers, memory: Word[], kernel: Kernel) {
     this.registers = registers
     this.memory = memory
     this.kernel = kernel
+  }
+
+  public run(program: Op[]): void {
+    this.program = program
+
+    if (process.env['STEP'])
+      process.stdin.on('data', () => this.step())
+    else
+      while (true)
+        this.step()
   }
 
   /**
@@ -67,77 +81,71 @@ export class Interpreter {
    * (if it exists), instantiate the instruction's operands as values or address
    * and execute the instruction's function.
    */
-  public run(program: Op[]): void {
-    let loopCounter = 0
+  public step(): void {
+    const ip = this.registers.table.ip
+    const instruction = this.program.find(i => i.no === ip.read())
 
-    const labels = this.getInstructionLabels(program)
-
-    while (true) {
-      const ip = this.registers.table.ip
-      const instruction = program.find(i => i.no === ip.read())
-
-      enum Mechanism {
-        NONE = 'None',
-        KERNEL = 'Kernel',
-        INTERP = 'Interp'
-      }
-
-      let mechanism = Mechanism.NONE
-
-      if (!instruction)
-        throw new Error(`Instruction ${ip.read()} not found.`)
-
-      const { code, args, comment } = instruction
-
-      let op: IsaEntry | void
-
-      op = this.lookupCode(code)
-      if (op) {
-        mechanism = Mechanism.INTERP
-      }
-      else {
-        op = this.kernel.lookupCode(code)
-        if (op)
-          mechanism = Mechanism.KERNEL
-      }
-  
-      if (!op)
-        throw new Error(`Operation "${code}" not found.`)
-
-      log(`#run> #%d %s (%s): %o`, ip.read(), code, mechanism, args)
-
-      const boundArgs = args.map(op => {
-        if (op.type === ArgType.IMM) {
-          return new Value(Number(op.value))
-        }
-
-        if (!op.deref) {
-          return new Addr(Number(op.value), this.memory)
-        }
-
-        return new Ptr(Number(op.value), this.memory)
-      })
-
-      log(`#run> #%d %s (%s): %o`, ip.read(), code, mechanism, boundArgs.map(a => a.inspect))
-
-      op.fn(...boundArgs)
-      debug(`Input=%o`, this.registers.io[0])
-      debug(`Output=%o`, this.registers.io[1])
-      debug(`Memory=%o`, this.memory)
-
-      if (ip.read() >= program.length) {
-        log(`End of program. Terminated on op #%o`, ip.read())
-        break
-      }
-
-      loopCounter++
-      if (loopCounter > Interpreter.MAX_OPS) {
-        log(`Too many ops. Terminated on op #%o`, ip.read())
-        break
-      }
-
-      this.registers.table.ip.write(ip.read() + 1)
+    enum Mechanism {
+      NONE = 'None',
+      KERNEL = 'Kernel',
+      INTERP = 'Interp'
     }
+
+    let mechanism = Mechanism.NONE
+
+    if (!instruction)
+      throw new Error(`Instruction ${ip.read()} not found.`)
+
+    const { code, args, comment } = instruction
+
+    let op: IsaEntry | void
+
+    op = this.lookupCode(code)
+    if (op) {
+      mechanism = Mechanism.INTERP
+    }
+    else {
+      op = this.kernel.lookupCode(code)
+      if (op)
+        mechanism = Mechanism.KERNEL
+    }
+
+    if (!op)
+      throw new Error(`Operation "${code}" not found.`)
+
+    log(`#run> #%d %s (%s): %o`, ip.read(), code, mechanism, args)
+
+    const boundArgs = args.map(op => {
+      if (op.type === ArgType.IMM) {
+        return new Value(Number(op.value))
+      }
+
+      if (!op.deref) {
+        return new Addr(Number(op.value), this.memory)
+      }
+
+      return new Ptr(Number(op.value), this.memory)
+    })
+
+    log(`#run> #%d %s (%s): %o`, ip.read(), code, mechanism, boundArgs.map(a => a.inspect))
+
+    op.fn(...boundArgs)
+    debug(`Input=%o`, this.registers.io[0])
+    debug(`Output=%o`, this.registers.io[1])
+    debug(`Memory=%o`, this.memory)
+
+    if (ip.read() >= this.program.length) {
+      log(`End of program. Terminated on op #%o`, ip.read())
+      process.exit(0)
+    }
+
+    this.loopCounter++
+    if (this.loopCounter > Interpreter.MAX_OPS) {
+      log(`Too many ops. Terminated on op #%o`, ip.read())
+      process.exit(1)
+    }
+
+    this.registers.table.ip.write(ip.read() + 1)
   }
 
   private getInstructionLabels(instructions: Op[]): { [label: string]: number } {
