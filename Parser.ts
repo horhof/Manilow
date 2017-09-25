@@ -185,9 +185,10 @@ export class Parser {
     const [opText, comment] = source.split(Parser.COMMENT_PREFIX).map(x => x.trim())
     const split = opText.split(Parser.CODE_TERM)
     const code = split[0]
-    const argText = split.slice(1).join(``).split(Parser.ARG_SEP).filter(x => x)
+    const argText = opText.replace(`${code} `, '')
+    const textArgs = argText.split(Parser.ARG_SEP).filter(x => x)
     log(`#getOp> Code=%o ArgText=%o Comment=%o`, code, argText, comment)
-    const args = this.getArgs(argText)
+    const args = this.getArgs(textArgs)
 
     log(`#getOp> Comment=%O Code=%O Arg1=%o Arg2=%o Arg3=%o`, comment, code, args[0], args[1], args[2])
     return { no, labels, code, args, comment }

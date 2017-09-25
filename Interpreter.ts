@@ -7,8 +7,7 @@ import { Kernel } from './Kernel'
 
 const info = Debug('Mel:Interpreter')
 const memoryDebug = Debug('Mel:Memory')
-
-const debug = Debug('Mel:Debug:Interpreter')
+const debug = Debug('Mel:Interpreter:Debug')
 
 export interface IsaEntry {
   code: string

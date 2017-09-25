@@ -2,9 +2,10 @@ import * as fs from 'fs'
 
 process.env['DEBUG'] = [
   'Mel:Vm',
-//'Mel:Parser',
+  'Mel:Parser',
   'Mel:Memory',
   'Mel:Interpreter',
+  'Mel:Interpreter:Debug',
   'Mel:I/O'
 ].join(',')
 import * as Debug from 'debug'
