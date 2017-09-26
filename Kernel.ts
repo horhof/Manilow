@@ -1,6 +1,6 @@
 import * as Debug from 'debug'
 
-import { Word, Value, Addr } from './Word'
+import { Word, Immediate, DataAddress } from './Word'
 import { Registers } from './Registers'
 
 const log = Debug('Mel:Kernel')
@@ -11,7 +11,7 @@ export type TernaryTransform = { (a: Word, b: Word, c: Word): Word }
 
 export interface IsaEntry {
   code: string
-  fn: { (...x: Value[]): void }
+  fn: { (...x: Immediate[]): void }
 }
 
 // Unary transforms.
@@ -67,12 +67,12 @@ export class Kernel {
    * @param [src] Source value or address. Defaults to data.
    * @param [dest] Destination address. Defaults to accum.
    */
-  private copy(src: Value | Addr = this.registers.table.data, dest: Addr = this.registers.table.accum): void {
+  private copy(src: Immediate | DataAddress = this.registers.table.data, dest: DataAddress = this.registers.table.accum): void {
     dest.write(src.read())
   }
 
-  private zero(dest: Addr = this.registers.table.accum): void {
-    this.copy(new Value(0), dest)
+  private zero(dest: DataAddress = this.registers.table.accum): void {
+    this.copy(new Immediate(0), dest)
   }
 
   /**
@@ -83,11 +83,11 @@ export class Kernel {
    * 
    * @param [dest] Destination address. Defaults to accum.
    */
-  private in(dest: Addr = this.registers.table.accum): void {
+  private in(dest: DataAddress = this.registers.table.accum): void {
     dest.write(this.registers.table.input.read())
   }
 
-  private out(src: Addr = this.registers.table.accum): void {
+  private out(src: DataAddress = this.registers.table.accum): void {
     this.registers.table.output.write(src.read())
   }
 
@@ -105,7 +105,7 @@ export class Kernel {
    * immediate value.
    */
   private applySrcToDest(fn: BinaryTransform) {
-    return (src: Value = this.registers.table.data, dest: Value = this.registers.table.accum): void => {
+    return (src: Immediate = this.registers.table.data, dest: Immediate = this.registers.table.accum): void => {
       const result = fn(dest.read(), src.read())
       dest.write(result)
     }
@@ -119,7 +119,7 @@ export class Kernel {
    * - Apply src to dest: a. (Call fn with a)
    */
   private applyToDest(fn: UnaryTransform) {
-    return (dest: Addr = this.registers.table.accum): void => {
+    return (dest: DataAddress = this.registers.table.accum): void => {
       const existing = dest.read()
       dest.write(fn(existing))
     }

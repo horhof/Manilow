@@ -11,7 +11,7 @@ process.env['DEBUG'] = [
 import * as Debug from 'debug'
 
 import { Parser, ArgType } from './Parser'
-import { Word, Value, Addr, Ptr, Channel } from './Word'
+import { Word, Immediate, DataAddress, Ptr, Channel } from './Word'
 import { Kernel, IsaEntry } from './Kernel'
 import { Registers } from './Registers'
 import { Interpreter } from './Interpreter'

@@ -1,6 +1,6 @@
 import * as Debug from 'debug'
 
-import { Word, Value, Addr, OpAddr, Ptr } from './Word'
+import { Word, Immediate, DataAddress, InstructionAddress, Ptr } from './Word'
 import { Registers } from './Registers'
 import { Instruction, ArgType } from './Parser'
 import { Kernel } from './Kernel'
@@ -11,7 +11,7 @@ const debug = Debug('Mel:Interpreter:Debug')
 
 export interface IsaEntry {
   code: string
-  fn: { (...x: Value[]): void }
+  fn: { (...x: Immediate[]): void }
 }
 
 // Unary predicates.
@@ -148,20 +148,20 @@ export class Interpreter {
     debug(`#run> #%d %s (%s): %o`, no, code, mechanism, args)
 
     const boundArgs = args.map(op => {
-      if (op.type === ArgType.IMM)
-        return new Value(Number(op.value))
+      if (op.type === ArgType.IMMEDIATE)
+        return new Immediate(Number(op.value))
 
-      if (op.type === ArgType.OP_ADDR)
-        return new OpAddr(Number(op.value), this.memory)
+      if (op.type === ArgType.INSTRUCTION_ADDRESS)
+        return new InstructionAddress(Number(op.value), this.memory)
 
       if (!op.deref)
-        return new Addr(Number(op.value), this.memory)
+        return new DataAddress(Number(op.value), this.memory)
 
       return new Ptr(Number(op.value), this.memory)
     })
 
     if (boundArgs.length > 0)
-      info(`%s (%s): %o`, code, mechanism, boundArgs.map(a => a.inspect))
+      info(`%s (%s): %o`, code, mechanism, boundArgs.map(a => a.summary))
     else
       info(`%s (%s)`, code, mechanism)
 
@@ -205,7 +205,7 @@ export class Interpreter {
   }
 
   /** Change instruction pointer to point to dest. */
-  private jump(dest: Value): void {
+  private jump(dest: Immediate): void {
     const addr = dest.read()
     const ip = this.registers.table.ip
     ip.write(addr - 1)
@@ -220,7 +220,7 @@ export class Interpreter {
      * @param dest The op address being jumped to.
      * @param src The thing being examined. Defaults to accum.
      */
-    return (dest: OpAddr, src: Addr = this.registers.table.accum) => {
+    return (dest: InstructionAddress, src: DataAddress = this.registers.table.accum) => {
       debug(`Examining source address %o (value is %o) to see if I should jump to dest %o...`, src.address , src.read(), dest.read());
       if (!predicate(src.read())) {
         debug(`Predicate was false. No jump.`)

@@ -1,11 +1,11 @@
 import * as Debug from 'debug'
 
-import { Word, Addr, Port, Channel } from './Word'
+import { Word, DataAddress, Port, Channel } from './Word'
 
 const log = Debug('Mel:Registers')
 
 export class Registers {
-  public readonly table: { [name: string]: Addr }
+  public readonly table: { [name: string]: DataAddress }
 
   private names = [
     `accum`,
@@ -35,7 +35,7 @@ export class Registers {
       if (name === 'input' || name === 'output')
         this.table[name] = new Port(port++, io)
       else
-        this.table[name] = new Addr(addr, memory)
+        this.table[name] = new DataAddress(addr, memory)
     })
 
     this.table.ip.write(1)

@@ -1,3 +1,14 @@
+/**
+ * Defines the parser.
+ * 
+ * Types:
+ * - Instruction
+ * - ArgType
+ * 
+ * Classes:
+ * - Parser
+ */
+
 import * as Debug from 'debug'
 
 import { Word, Label } from './Word'
@@ -5,15 +16,31 @@ import { Word, Label } from './Word'
 const log = Debug('Mel:Parser')
 
 /**
- * These are the types of data that can be given as arguments to operations.
+ * The parser produces instructions from source code.
  */
-export enum ArgType {
-  IMM = 'IMM',
-  ADDR = 'ADDR',
-  OP_ADDR = 'OP_ADDR'
+export interface Instruction {
+  no: number
+  labels: any[]
+  code: string
+  args: Arg[]
+  comment?: string
 }
 
 /**
+ * These are the different types of data that can be given as arguments to
+ * operations.
+ */
+export enum ArgType {
+  // An immediate value. See class Immediate.
+  IMMEDIATE = 'IMMEDIATE',
+  // An address of a piece of data. See class DataAddress.
+  DATA_ADDRESS = 'DATA_ADDR',
+  // An address of an instruction. See class InstructionAddress.
+  INSTRUCTION_ADDRESS = 'INST_ADDR'
+}
+
+/**
+ * A parsed argument.
  * Operands contain their type, their value (always converted to decimal),
  * and (if addresses) whether or not they're dereferenced addresses.
  * 
@@ -25,7 +52,7 @@ export enum ArgType {
  *     14
  *     *4
  */
-export interface Arg {
+interface Arg {
   type: ArgType
   // TODO: Word or label
   value: number | string
@@ -37,18 +64,10 @@ export interface Arg {
  * assigned to their target instruction. The text of the operation has to be
  * further parsed.
  */
-export interface LabelledOp {
+interface LabelledOp {
   no: number
   labels: Label[]
   source: string
-}
-
-export interface Instruction {
-  no: number
-  labels: any[]  // TODO: Type as Label[].
-  code: string
-  args: Arg[]
-  comment?: string
 }
 
 /**
@@ -56,13 +75,6 @@ export interface Instruction {
  * 
  * API:
  * - Get program: source = ops
- * 
- * Private API:
- * - Assign labels: lines = labelled ops
- * - Parse line: line = [label], [source]
- * - Get op: labelled op = op
- * - Get args: list of arg text = arg list
- * - Parse immediate: argument text = arg
  */
 export class Parser {
   /**
@@ -281,7 +293,7 @@ export class Parser {
         if (opAddr) {
           const value = this.labelMap[argText]
           return {
-            type: ArgType.OP_ADDR,
+            type: ArgType.INSTRUCTION_ADDRESS,
             value
           }
         }
@@ -291,7 +303,7 @@ export class Parser {
           : argText
 
         return {
-          type: ArgType.ADDR,
+          type: ArgType.DATA_ADDRESS,
           value: Number(valueText),
           deref
         }
@@ -325,7 +337,7 @@ export class Parser {
   //log(`#parseImm> Code=%O RadTab=%O Radix=%O`, code, radixTable, radix)
 
     return {
-      type: ArgType.IMM,
+      type: ArgType.IMMEDIATE,
       value: parseInt(text.slice(2), radix)
     }
   }
