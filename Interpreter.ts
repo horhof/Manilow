@@ -15,15 +15,8 @@ export interface IsaEntry {
 }
 
 // Unary predicates.
-function zero(a: Word): boolean {
-  debug(`zero> a=%o`, a)
-  return eq(a, 0)
-}
-//nction nonZero(a: Word): boolean { return neq(a, 0) }
-function nonZero(a: Word): boolean {
-  debug(`nonZero> a=%o Return=%o`, a, neq(a, 0))
-  return neq(a, 0)
-}
+function zero(a: Word): boolean { return eq(a, 0) }
+function nonZero(a: Word): boolean { return neq(a, 0) }
 function positive(a: Word): boolean { return gte(a, 0) }
 function negative(a: Word): boolean { return lt(a, 0) }
 
@@ -39,7 +32,8 @@ function lte(a: Word, b: Word): boolean { return a < b }
  * Interpreter
  * 
  * API:
- * - Lookup code: op code = ISA entry
+ * - <Run>: program.
+ * - Step.
  */
 export class Interpreter {
   static MAX_OPS = 50
@@ -52,21 +46,14 @@ export class Interpreter {
 
   private program: Instruction[]
 
+  /** When this flag is set, the interpreter terminates at the end of the current step. */
   private halt = false
 
   private isa: IsaEntry[] = [
-    { code: 'JUMP', fn: this.jump.bind(this) },
-    { code: 'JZ', fn: this.jumpIf(zero) },
-    { code: 'JNZ', fn: this.jumpIf(nonZero) },
-    { code: 'HCF', fn: () => { debug(`HCF. Exiting...`); this.halt = true } }
-    /*
-    { code: 'JNZ', fn: (...x: any[]) => {
-      log(x)
-      const fn = this.jumpIf(nonZero)
-      log(fn)
-      return fn(...x)
-    } }
-    */
+    { code: 'jump', fn: this.jump.bind(this) },
+    { code: 'jz', fn: this.jumpIf(zero) },
+    { code: 'jnz', fn: this.jumpIf(nonZero) },
+    { code: 'hcf', fn: () => { debug(`HCF. Exiting...`); this.halt = true } }
   ]
 
   private loopCounter = 0
@@ -145,7 +132,7 @@ export class Interpreter {
     if (!op)
       throw new Error(`Operation "${code}" not found.`)
 
-    debug(`#run> #%d %s (%s): %o`, no, code, mechanism, args)
+    debug(`#run> #%d "%s" (%s): %o`, no, code, mechanism, args)
 
     const boundArgs = args.map(op => {
       if (op.type === ArgType.IMMEDIATE)

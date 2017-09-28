@@ -1,5 +1,3 @@
-import * as fs from 'fs'
-
 process.env['DEBUG'] = [
   'Mel:Vm',
   'Mel:Parser',
@@ -8,6 +6,8 @@ process.env['DEBUG'] = [
   'Mel:Interpreter:Debug',
   'Mel:I/O'
 ].join(',')
+
+import * as fs from 'fs'
 import * as Debug from 'debug'
 
 import { Parser, ArgType } from './Parser'
@@ -21,7 +21,7 @@ const log = Debug('Mel:Vm')
 const parser = new Parser()
 
 log(`Reading source code...`)
-const source = fs.readFileSync('go.asm', 'utf-8')
+const source = fs.readFileSync('source.s', 'utf-8')
 const program = parser.getProgram(source)
 
 log(`Initializing memory...`)

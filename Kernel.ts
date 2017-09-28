@@ -34,19 +34,19 @@ export class Kernel {
   public registers: Registers
 
   private isa: IsaEntry[] = [
-    { code: 'NOOP', fn: () => undefined },
-    { code: 'COPY', fn: this.copy.bind(this) },
-    { code: 'ZERO', fn: this.zero.bind(this) },
-    { code: 'IN', fn: this.in.bind(this) },
-    { code: 'OUT', fn: this.out.bind(this) },
-    { code: 'ADD', fn: this.applySrcToDest(add) },
-    { code: 'SUB', fn: this.applySrcToDest(sub) },
-    { code: 'MUL', fn: this.applySrcToDest(mul) },
-    { code: 'INC', fn: this.applyToDest(increment) },
-    { code: 'DEC', fn: this.applyToDest(decrement) },
-    { code: 'DOUBLE', fn: this.applyToDest(double) },
-    { code: 'SQUARE', fn: this.applyToDest(square) },
-    { code: 'SQRT', fn: this.applyToDest(sqrt) },
+    { code: 'noop', fn: () => undefined },
+    { code: 'copy', fn: this.copy.bind(this) },
+    { code: 'zero', fn: this.zero.bind(this) },
+    { code: 'in', fn: this.in.bind(this) },
+    { code: 'out', fn: this.out.bind(this) },
+    { code: 'add', fn: this.applySrcToDest(add) },
+    { code: 'sub', fn: this.applySrcToDest(sub) },
+    { code: 'mul', fn: this.applySrcToDest(mul) },
+    { code: 'inc', fn: this.applyToDest(increment) },
+    { code: 'dec', fn: this.applyToDest(decrement) },
+    { code: 'double', fn: this.applyToDest(double) },
+    { code: 'square', fn: this.applyToDest(square) },
+    { code: 'sqrt', fn: this.applyToDest(sqrt) },
   ]
 
   constructor(registers: Registers) {

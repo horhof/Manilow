@@ -41,6 +41,7 @@ export enum ArgType {
 
 /**
  * A parsed argument.
+ * 
  * Operands contain their type, their value (always converted to decimal),
  * and (if addresses) whether or not they're dereferenced addresses.
  * 
@@ -54,7 +55,6 @@ export enum ArgType {
  */
 interface Arg {
   type: ArgType
-  // TODO: Word or label
   value: number | string
   deref?: boolean
 }
@@ -62,7 +62,7 @@ interface Arg {
 /**
  * The first pass at parsing an instruction has the labels collected and
  * assigned to their target instruction. The text of the operation has to be
- * further parsed.
+ * further parsed in order to make an Instruction object.
  */
 interface LabelledOp {
   no: number
@@ -72,6 +72,11 @@ interface LabelledOp {
 
 /**
  * I take incoming source code and return a parsed program.
+ * 
+ * Some of the instructions in the source code will only affect the parser,
+ * such as those reference the next or previous anonymous blocks. Components
+ * downstream will for example see just see instructions referencing the number
+ * of instructions.
  * 
  * API:
  * - Get program: source = ops
@@ -95,23 +100,23 @@ export class Parser {
 
   /**
    * ```asm
-   * ADD 0d1, 1  
-   * #  ^ Operations end with a space.
+   * add: 0d1, 1  
+   * #  ^ Operations end with a colon.
    * ```
    */
-  static OP_SUFFIX = ` `
+  static OP_SUFFIX = `:`
 
   /**
    * ```asm
-   * SUB 0x10, 1
-   * #       ^ Arguments are separated by commas.
+   * sub: 0x10, 1
+   * #        ^ Arguments are separated by commas.
    * ```
    */
   static ARG_SEP = `,`
 
   /**
    * ```asm
-   * HCF  # End program.
+   * hcf  # End program.
    * #    ^ Introduce comments with a pound sign.
    * ```
    */
@@ -119,16 +124,16 @@ export class Parser {
 
   /**
    * ```asm
-   * ADD *SP
-   * #   ^ Dereference addresses with an asterisk.
+   * add: *SP
+   * #    ^ Dereference addresses with an asterisk.
    * ```
    */
   static DEREF_OPERATOR = `*`
 
   /**
    * ```asm
-   * COPYTO &record, 0
-   * #      ^ Get the address of a variable with an ampersand.
+   * copy: &record, 0
+   * #     ^ Get the address of a variable with an ampersand.
    * ```
    */
   static ADDR_OPERATOR = `&`
@@ -156,8 +161,10 @@ export class Parser {
 
   /**
    * I run through the lines of source code and resolve the assignment of
-   * labels. (Because labels can be referenced before they're defined.) The
-   * text of the operations is unparsed at this stage.
+   * labels. The text of the operations is unparsed at this stage.
+   * 
+   * I'm incrementing instructionCount and collecting labels. Then I modify the
+   * instructions themselves to assign the labels that pertain to them.
    */
   private assignLabels(lines: string[]): LabelledOp[] {
     this.instructionCount = 1
@@ -166,7 +173,7 @@ export class Parser {
     let labels: Label[] = []
 
     // The first pass places the labels directly on the LabelledOp objects.
-    const ops = <LabelledOp[]>lines
+    const instructions = <LabelledOp[]>lines
       .map((line: string): LabelledOp | void => {
         const no = this.instructionCount
         const { label, source } = this.parseLine(line)
@@ -185,18 +192,16 @@ export class Parser {
     
     // The second pass collects the labels into a map where the text of the label
     // maps to the number of the instruction.
-    ops.forEach(op => {
-      log(`Looking at op #%d for labels... LabelCount=%d`, op.no, labels.length)
-      if (op.labels.length > 0) {
-        op.labels.forEach(label => {
-          this.labelMap[label] = op.no
-          log(`Assigning label %s to op #%d.`, label, op.no)
+    instructions.forEach(instruction => {
+      if (instruction.labels.length > 0) {
+        instruction.labels.forEach(label => {
+          this.labelMap[label] = instruction.no
+          log(`Assigning label "%s" the value of instruction #%d.`, label, instruction.no)
         })
       }
     })
 
-    //turn { ops, labelMap }
-    return ops
+    return instructions
   }
 
   /**
@@ -205,9 +210,9 @@ export class Parser {
    * 
    * For example:
    * 
-   *     { source: "DECR 0, 1" }  // Decrement operation.
-   *     { label: "startLoop" }   // Label "startLoop".
-   *     { }                      // Comment/blank line.
+   *     { source: "decr: 0, 1" }  // Decrement operation.
+   *     { label: "startLoop" }    // Label "startLoop".
+   *     { }                       // Comment/blank line.
    */
   private parseLine(line: string): { label?: string, source?: string } {
     line = line.trim()
@@ -240,16 +245,34 @@ export class Parser {
    */
   private getOp(labelledOp: LabelledOp): Instruction {
     const { no, labels, source } = labelledOp
+    log(`#getOp> No=%o Labels=%o Source=%o`, no, labels, source)
 
     const [opText, comment] = source.split(Parser.COMMENT_PREFIX).map(x => x.trim())
+    log(`#getOp> OpText=%O Comment=%O`, opText, comment)
+
     const split = opText.split(Parser.OP_SUFFIX)
     const code = split[0]
-    const argText = opText.replace(`${code} `, '')
-    const textArgs = argText.split(Parser.ARG_SEP).filter(x => x)
-    log(`#getOp> Code=%o ArgText=%o Comment=%o`, code, argText, comment)
-    const args = this.getArgs(textArgs)
+    log(`#getOp> Code=%O`, code)
 
-    log(`#getOp> Comment=%O Code=%O Arg1=%o Arg2=%o Arg3=%o`, comment, code, args[0], args[1], args[2])
+    const argText = opText.replace(`${code}${Parser.OP_SUFFIX}`, '').trim()
+    log(`#getOp> ArgText=%o`, argText)
+
+    const hasArgs = code !== argText
+    log(`#getOp> HasArg=%o`, hasArgs)
+
+    let args: any[] = []
+
+    if (hasArgs) {
+      const textArgs = argText.split(Parser.ARG_SEP).filter(x => x)
+      log(`#getOp> TextArgs=%o`, textArgs)
+
+      log(`#getOp> Code=%o ArgText=%o Comment=%o`, code, argText, comment)
+
+      args = this.getArgs(textArgs)
+      log(`#getOp> Final args. Args=%o`, args)
+    }
+
+    log(`#getOp> Code=%O Args=%o Comment=%O`, code, args, comment)
     return { no, labels, code, args, comment }
   }
 
@@ -257,15 +280,16 @@ export class Parser {
    * I extract operands from text like `0x40, 1`.
    */
   private getArgs(args: string[]): Arg[] {
+    log(`#getArgs> Args=%o`, args)
+
     if (args.length < 1)
       return []
 
     return <Arg[]>args
       .map((argText: string): Arg | void => {
         argText = argText.trim()
-      //log(`#getArgs> Text=%O`, argText)
 
-        if (argText.length < 0) {
+        if (argText.length < 1) {
           log(`Empty argText`)
           return
         }
