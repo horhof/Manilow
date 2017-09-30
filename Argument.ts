@@ -1,14 +1,12 @@
 /**
  * This file defines classes created by the parser for representing the
- * arguments to operations.
+ * arguments to operations that pertain to memory.
  * 
  * Classes:
  * - Immediate
  * - DataAddress
  * - InstructionAddress
  * - Pointer
- * - Channel
- * - Port
  */
 import * as Debug from 'debug'
 

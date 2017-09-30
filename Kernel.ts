@@ -9,11 +9,11 @@ import { Registers } from './Registers'
 
 const log = Debug('Mel:Kernel')
 
-export type UnaryTransform = { (a: Word): Word }
-export type BinaryTransform = { (a: Word, b: Word): Word }
-export type TernaryTransform = { (a: Word, b: Word, c: Word): Word }
+type UnaryTransform = { (a: Word): Word }
+type BinaryTransform = { (a: Word, b: Word): Word }
+type TernaryTransform = { (a: Word, b: Word, c: Word): Word }
 
-export interface IsaEntry {
+interface IsaEntry {
   code: string
   fn: { (...x: Immediate[]): void }
 }
@@ -31,7 +31,11 @@ function sub(a: Word, b: Word): Word { return a - b }
 function mul(a: Word, b: Word): Word { return a * b }
 
 /**
- * Kernel API:
+ * I hold all the core operations performed by the machine. My main purpose is
+ * to manipulate registers. Consumers look up operations by their code and use
+ * returned IsaEntry with its functions.
+ * 
+ * API:
  * - Lookup code: op code = ISA entry
  */
 export class Kernel {
@@ -57,7 +61,7 @@ export class Kernel {
     this.registers = registers
   }
 
-  public lookupCode(code: string): IsaEntry | void {
+  public lookupOp(code: string): IsaEntry | void {
     return this.isa.find(entry => entry.code === code)
   }
 

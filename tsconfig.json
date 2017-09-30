@@ -11,6 +11,6 @@
     "sourceMap": true
   },
   "files": [
-    "Vm.ts"
+    "main.ts"
   ]
 }

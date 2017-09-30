@@ -130,7 +130,7 @@ export class Interpreter {
       mechanism = Mechanism.INTERP
     }
     else {
-      op = this.kernel.lookupCode(code)
+      op = this.kernel.lookupOp(code)
       if (op)
         mechanism = Mechanism.KERNEL
     }
