@@ -1,3 +1,7 @@
+/**
+ * Defines the kernel.
+ */
+
 import * as Debug from 'debug'
 
 import { Word, Immediate, DataAddress } from './Argument'

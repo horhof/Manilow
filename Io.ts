@@ -1,3 +1,11 @@
+/**
+ * Defines components for performing I/O.
+ *
+ * Classes:
+ * - Channel
+ * - Port
+ */
+
 import * as Debug from 'debug'
 
 import { Word, DataAddress } from './Argument'
