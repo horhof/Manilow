@@ -19,6 +19,12 @@ export enum Flags {
 
 /**
  * I represent a set of status flags held in the "flags" register.
+ * 
+ * API:
+ * - Get?: flag
+ * - Set: flag.
+ * - Unset: flag.
+ * - Toggle: flag.
  */
 class FlagsRegister {
   static NUM_FLAGS = 1
@@ -68,9 +74,6 @@ class FlagsRegister {
  * 
  * API:
  * - Table
- * - Get flag?: name
- * - Set flag: name.
- * - Unset flag: name.
  */
 export class Registers {
   static NUM_REGISTERS = 11
