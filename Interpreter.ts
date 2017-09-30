@@ -5,18 +5,13 @@
 import * as Debug from 'debug'
 
 import { Word, Immediate, DataAddress, InstructionAddress, Pointer } from './Argument'
-import { Registers } from './Registers'
+import { Registers, Flags } from './Registers'
 import { Instruction, ArgType } from './Parser'
-import { Kernel } from './Kernel'
+import { Kernel, IsaEntry } from './Kernel'
 
 const info = Debug('Mel:Interpreter')
 const memoryDebug = Debug('Mel:Memory')
 const debug = Debug('Mel:Interpreter:Debug')
-
-export interface IsaEntry {
-  code: string
-  fn: { (...x: Immediate[]): void }
-}
 
 /**
  * Interpreter
@@ -59,7 +54,7 @@ export class Interpreter {
       if (process.env['STEP']) {
         info(`Running program in step-by-step mode. Press enter to step forward.`)
         process.stdin.on('data', () => {
-          if (this.registers.halt) {
+          if (this.registers.flags.get(Flags.HALT)) {
             info(`Halt in step-by-step mode. Resolving...`)
             resolve()
           }
@@ -70,7 +65,7 @@ export class Interpreter {
       }
       else {
         info(`Running program in automatic mode.`)
-        while (!this.registers.halt) {
+        while (!this.registers.flags.get(Flags.HALT)) {
           this.step()
         }
         info(`Halt in automatic mode. Resolving...`)

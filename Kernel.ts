@@ -1,11 +1,17 @@
 /**
  * Defines the kernel.
+ *
+ * Types:
+ * - IsaEntry
+ *
+ * Classes:
+ * - Kernel
  */
 
 import * as Debug from 'debug'
 
 import { Word, Immediate, DataAddress, InstructionAddress } from './Argument'
-import { Registers } from './Registers'
+import { Registers, Flags } from './Registers'
 
 const log = Debug('Mel:Kernel')
 
@@ -13,7 +19,7 @@ type UnaryTransform = { (a: Word): Word }
 type BinaryTransform = { (a: Word, b: Word): Word }
 type TernaryTransform = { (a: Word, b: Word, c: Word): Word }
 
-interface IsaEntry {
+export interface IsaEntry {
   code: string
   fn: { (...x: Immediate[]): void }
 }
@@ -60,7 +66,7 @@ export class Kernel {
     {
       code: 'halt', fn: () => {
         log(`Halt! Exiting...`);
-        this.registers.halt = true
+        this.registers.flags.set(Flags.HALT)
       }
     },
     // Data manipulation.

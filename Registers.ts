@@ -1,5 +1,8 @@
 /**
  * Defines the registers.
+ *
+ * Classes:
+ * - Registers
  */
 
 import * as Debug from 'debug'
@@ -9,6 +12,46 @@ import { Interpreter } from './Interpreter'
 import { Port, Channel } from './Io'
 
 const log = Debug('Mel:Registers')
+
+export enum Flags {
+  HALT = 1
+}
+
+/**
+ * I represent a set of status flags held in the "flags" register.
+ */
+class FlagsRegister {
+  private registers: Registers
+
+  constructor(registers: Registers) {
+    this.registers = registers
+  }
+
+  /** Return the given flag as a boolean. */
+  public get(bit: number): boolean {
+    return Boolean(this.register.read() & bit)
+  }
+
+  public set(bit: number): void {
+    if (!this.get(bit))
+      this.toggle(bit)
+  }
+
+  public unset(bit: number): void {
+    if (this.get(bit))
+      this.toggle(bit)
+  }
+
+  /** Flip the bit for the given flag. */
+  public toggle(bit: number): void {
+    const old = this.register.read()
+    this.register.write(old ^ bit)
+  }
+
+  private get register(): DataAddress {
+    return this.registers.table.flags
+  }
+}
 
 /**
  * I initialize a table of registers from provided memory and I/O. The set of
@@ -26,9 +69,7 @@ export class Registers {
 
   public readonly table: { [name: string]: DataAddress }
 
-  private flagNames = [
-    `halt`
-  ]
+  public flags: FlagsRegister
 
   /** Defines the names and the order of registers in memory. */
   private names = [
@@ -63,27 +104,8 @@ export class Registers {
         this.table[name] = new DataAddress(addr, memory)
     })
 
+    this.flags = new FlagsRegister(this)
+
     this.table.ip.write(Interpreter.STARTING_INSTRUCTION)
-  }
-
-  public getFlag(name: string): boolean {
-    const bit = this.flagNames.indexOf(name)
-    return Boolean(this.table.flags.read() & bit)
-  }
-
-  public setFlag(name: string): void {
-    const oldFlags = this.table.flags.read()
-    const bit = this.flagNames.indexOf(name)
-    this.table.flags.write(oldFlags | bit)
-  }
-
-  public unsetFlag(name: string): void {
-    const oldFlags = this.table.flags.read()
-    const bit = this.flagNames.indexOf(name)
-    this.table.flags.write(oldFlags & bit)
-  }
-
-  public set halt(flag: boolean) {
-    this.setFlag('halt')
   }
 }
