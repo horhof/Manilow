@@ -1,0 +1,8 @@
+{
+  "name": "mel",
+  "version": "0.1.0",
+  "dependencies": {
+    "debug": "^3.0.1",
+    "typescript": "^2.5.2"
+  }
+}

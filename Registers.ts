@@ -1,6 +1,7 @@
 import * as Debug from 'debug'
 
-import { Word, DataAddress, Port, Channel } from './Word'
+import { Word, DataAddress } from './Argument'
+import { Port, Channel } from './Io'
 
 const log = Debug('Mel:Registers')
 

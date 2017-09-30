@@ -11,7 +11,7 @@
 
 import * as Debug from 'debug'
 
-import { Word, Label } from './Word'
+import { Word, Label } from './Argument'
 
 const log = Debug('Mel:Parser')
 

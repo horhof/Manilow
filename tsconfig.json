@@ -11,11 +11,6 @@
     "sourceMap": true
   },
   "files": [
-    "Vm.ts",
-    "Parser.ts",
-    "Interpreter.ts",
-    "Registers.ts",
-    "Kernel.ts",
-    "Word.ts"
+    "Vm.ts"
   ]
 }

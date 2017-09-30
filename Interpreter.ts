@@ -1,6 +1,6 @@
 import * as Debug from 'debug'
 
-import { Word, Immediate, DataAddress, InstructionAddress, Pointer } from './Word'
+import { Word, Immediate, DataAddress, InstructionAddress, Pointer } from './Argument'
 import { Registers } from './Registers'
 import { Instruction, ArgType } from './Parser'
 import { Kernel } from './Kernel'
@@ -208,7 +208,7 @@ export class Interpreter {
      * @param src The thing being examined. Defaults to accum.
      */
     return (dest: InstructionAddress, src: DataAddress = this.registers.table.accum) => {
-      debug(`Examining source address %o (value is %o) to see if I should jump to dest %o...`, src.address , src.read(), dest.read());
+      debug(`Examining source address %o (value is %o) to see if I should jump to dest %o...`, src.address, src.read(), dest.read());
       if (!predicate(src.read())) {
         debug(`Predicate was false. No jump.`)
         return

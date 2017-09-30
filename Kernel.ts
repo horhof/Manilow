@@ -1,6 +1,6 @@
 import * as Debug from 'debug'
 
-import { Word, Immediate, DataAddress } from './Word'
+import { Word, Immediate, DataAddress } from './Argument'
 import { Registers } from './Registers'
 
 const log = Debug('Mel:Kernel')
