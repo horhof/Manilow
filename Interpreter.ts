@@ -51,9 +51,9 @@ export class Interpreter {
 
   private isa: IsaEntry[] = [
     { code: 'jump', fn: this.jump.bind(this) },
-    { code: 'jz', fn: this.jumpIf(zero) },
-    { code: 'jnz', fn: this.jumpIf(nonZero) },
-    { code: 'hcf', fn: () => { debug(`HCF. Exiting...`); this.halt = true } }
+    { code: 'jump zero', fn: this.jumpIf(zero) },
+    { code: 'jump not jero', fn: this.jumpIf(nonZero) },
+    { code: 'halt', fn: () => { debug(`HCF. Exiting...`); this.halt = true } }
   ]
 
   private loopCounter = 0

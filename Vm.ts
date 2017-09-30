@@ -41,7 +41,10 @@ const kernel = new Kernel(registers)
 log(`Creating interpreter...`)
 const interpreter = new Interpreter(registers, memory, kernel)
 
-log(`Program=%O`, program)
+log(`Program...`)
+program.forEach(instruction => {
+  log(`%O`, instruction)
+})
 
 log(`Running program...`)
 interpreter.run(program)
