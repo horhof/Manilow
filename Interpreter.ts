@@ -82,7 +82,7 @@ export class Interpreter {
    * and execute the instruction's function.
    */
   public step(): void {
-    const no = this.registers.ip.read()
+    const no = this.registers.instr.read()
     const instruction = this.program.find(i => i.no === no)
     debug(`#step> IP=%o Op=%o`, no, instruction)
     info(`Running instruction %d/%d...`, no, this.program.length)
@@ -126,9 +126,9 @@ export class Interpreter {
     memoryDebug(`Output=%o`, this.registers.io[1].data)
     memoryDebug(`Memory=%o`, this.memory)
 
-    const oldNo = this.registers.ip.read()
+    const oldNo = this.registers.instr.read()
     const newNo = oldNo + 1
-    this.registers.ip.write(newNo)
+    this.registers.instr.write(newNo)
 
     if (newNo > this.program.length) {
       info(`End of program. Terminated on op #%o`, oldNo)

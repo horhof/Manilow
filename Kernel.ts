@@ -178,7 +178,7 @@ export class Kernel {
    */
   private jump(dest: Immediate): void {
     const addr = dest.read()
-    const ip = this.registers.ip
+    const ip = this.registers.instr
     ip.write(addr - 1)
   }
 
@@ -199,7 +199,7 @@ export class Kernel {
       }
 
       const addr = dest.read()
-      const ip = this.registers.ip
+      const ip = this.registers.instr
       log(`Predicate was true. Jumping from %d to %d...`, ip.read(), addr)
       ip.write(addr - 1)
       log(`IP is now %o.`, ip.read())

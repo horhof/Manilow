@@ -86,7 +86,7 @@ export class Registers {
   public stack: Register
 
   /** Instruction pointer. */
-  public ip: Register
+  public instr: Register
 
   public memory: Word[]
 
@@ -101,8 +101,8 @@ export class Registers {
     this.accum = this.initRegister(address++)
     this.data = this.initRegister(address++)
     this.stack = this.initRegister(address++)
-    this.ip = this.initRegister(address++)
-    this.ip.write(Interpreter.STARTING_INSTRUCTION)
+    this.instr = this.initRegister(address++)
+    this.instr.write(Interpreter.STARTING_INSTRUCTION)
     this.flags = new FlagsRegister(address++)
     // count
     // dest
