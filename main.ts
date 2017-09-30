@@ -3,9 +3,8 @@
  * runs it.
  */
 
-import { Vm } from './Vm'
-
-process.env['DEBUG'] = [
+// Provide defaults for debugging if not defined.
+process.env['DEBUG'] = process.env['DEBUG'] || [
   'Mel:Vm',
   'Mel:Parser',
   'Mel:Memory',
@@ -14,5 +13,6 @@ process.env['DEBUG'] = [
   'Mel:I/O'
 ].join(',')
 
+import { Vm } from './Vm'
 const vm = new Vm()
 vm.run('source.s')

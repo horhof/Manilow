@@ -2,15 +2,6 @@
  * Defines the virtual machine.
  */
 
-process.env['DEBUG'] = [
-  'Mel:Vm',
-  'Mel:Parser',
-  'Mel:Memory',
-  'Mel:Interpreter',
-  'Mel:Interpreter:Debug',
-  'Mel:I/O'
-].join(',')
-
 import * as fs from 'fs'
 import * as Debug from 'debug'
 
