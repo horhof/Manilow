@@ -4,7 +4,7 @@
 
 import * as Debug from 'debug'
 
-import { Word, Immediate, DataAddress } from './Argument'
+import { Word, Immediate, DataAddress, InstructionAddress } from './Argument'
 import { Registers } from './Registers'
 
 const log = Debug('Mel:Kernel')
@@ -30,6 +30,20 @@ function add(a: Word, b: Word): Word { return a + b }
 function sub(a: Word, b: Word): Word { return a - b }
 function mul(a: Word, b: Word): Word { return a * b }
 
+// Unary predicates.
+function zero(a: Word): boolean { return eq(a, 0) }
+function nonZero(a: Word): boolean { return neq(a, 0) }
+function positive(a: Word): boolean { return gte(a, 0) }
+function negative(a: Word): boolean { return lt(a, 0) }
+
+// Binary predicates.
+function eq(a: Word, b: Word): boolean { return a === b }
+function neq(a: Word, b: Word): boolean { return a !== b }
+function gt(a: Word, b: Word): boolean { return a > b }
+function gte(a: Word, b: Word): boolean { return a >= b }
+function lt(a: Word, b: Word): boolean { return a < b }
+function lte(a: Word, b: Word): boolean { return a < b }
+
 /**
  * I hold all the core operations performed by the machine. My main purpose is
  * to manipulate registers. Consumers look up operations by their code and use
@@ -43,10 +57,19 @@ export class Kernel {
 
   private isa: IsaEntry[] = [
     { code: 'noop', fn: () => undefined },
+    {
+      code: 'halt', fn: () => {
+        log(`Halt! Exiting...`);
+        this.registers.halt = true
+      }
+    },
+    // Data manipulation.
     { code: 'copy', fn: this.copy.bind(this) },
     { code: 'zero', fn: this.zero.bind(this) },
+    // I/O operations.
     { code: 'in', fn: this.in.bind(this) },
     { code: 'out', fn: this.out.bind(this) },
+    // Arithmetic.
     { code: 'add', fn: this.applySrcToDest(add) },
     { code: 'sub', fn: this.applySrcToDest(sub) },
     { code: 'mul', fn: this.applySrcToDest(mul) },
@@ -55,6 +78,10 @@ export class Kernel {
     { code: 'double', fn: this.applyToDest(double) },
     { code: 'square', fn: this.applyToDest(square) },
     { code: 'sqrt', fn: this.applyToDest(sqrt) },
+    // Jumps.
+    { code: 'jump', fn: this.jump.bind(this) },
+    { code: 'jump zero', fn: this.jumpIf(zero) },
+    { code: 'jump not jero', fn: this.jumpIf(nonZero) },
   ]
 
   constructor(registers: Registers) {
@@ -130,6 +157,37 @@ export class Kernel {
     return (dest: DataAddress = this.registers.table.accum): void => {
       const existing = dest.read()
       dest.write(fn(existing))
+    }
+  }
+
+  /** Change instruction pointer to point to dest. */
+  private jump(dest: Immediate): void {
+    const addr = dest.read()
+    const ip = this.registers.table.ip
+    ip.write(addr - 1)
+  }
+
+  /**
+   * Return a binary function taking a `src` to examine and a `dest` to jump
+   * to, using `predicate` to decide to jump or not.
+   */
+  private jumpIf(predicate: Function) {
+    /**
+     * @param dest The op address being jumped to.
+     * @param src The thing being examined. Defaults to accum.
+     */
+    return (dest: InstructionAddress, src: DataAddress = this.registers.table.accum) => {
+      log(`Examining source address %o (value is %o) to see if I should jump to dest %o...`, src.address, src.read(), dest.read());
+      if (!predicate(src.read())) {
+        log(`Predicate was false. No jump.`)
+        return
+      }
+
+      const addr = dest.read()
+      const ip = this.registers.table.ip
+      log(`Predicate was true. Jumping from %d to %d...`, ip.read(), addr)
+      ip.write(addr - 1)
+      log(`IP is now %o.`, ip.read())
     }
   }
 }

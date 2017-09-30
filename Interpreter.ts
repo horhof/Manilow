@@ -18,20 +18,6 @@ export interface IsaEntry {
   fn: { (...x: Immediate[]): void }
 }
 
-// Unary predicates.
-function zero(a: Word): boolean { return eq(a, 0) }
-function nonZero(a: Word): boolean { return neq(a, 0) }
-function positive(a: Word): boolean { return gte(a, 0) }
-function negative(a: Word): boolean { return lt(a, 0) }
-
-// Binary predicates.
-function eq(a: Word, b: Word): boolean { return a === b }
-function neq(a: Word, b: Word): boolean { return a !== b }
-function gt(a: Word, b: Word): boolean { return a > b }
-function gte(a: Word, b: Word): boolean { return a >= b }
-function lt(a: Word, b: Word): boolean { return a < b }
-function lte(a: Word, b: Word): boolean { return a < b }
-
 /**
  * Interpreter
  * 
@@ -53,14 +39,8 @@ export class Interpreter {
   private program: Instruction[]
 
   /** When this flag is set, the interpreter terminates at the end of the current step. */
+  // TODO consider putting htis in the status register.
   private halt = false
-
-  private isa: IsaEntry[] = [
-    { code: 'jump', fn: this.jump.bind(this) },
-    { code: 'jump zero', fn: this.jumpIf(zero) },
-    { code: 'jump not jero', fn: this.jumpIf(nonZero) },
-    { code: 'halt', fn: () => { debug(`HCF. Exiting...`); this.halt = true } }
-  ]
 
   private loopCounter = 0
 
@@ -79,7 +59,7 @@ export class Interpreter {
       if (process.env['STEP']) {
         info(`Running program in step-by-step mode. Press enter to step forward.`)
         process.stdin.on('data', () => {
-          if (this.halt) {
+          if (this.registers.halt) {
             info(`Halt in step-by-step mode. Resolving...`)
             resolve()
           }
@@ -90,7 +70,7 @@ export class Interpreter {
       }
       else {
         info(`Running program in automatic mode.`)
-        while (!this.halt) {
+        while (!this.registers.halt) {
           this.step()
         }
         info(`Halt in automatic mode. Resolving...`)
@@ -110,14 +90,6 @@ export class Interpreter {
     debug(`#step> IP=%o Op=%o`, no, instruction)
     info(`Running instruction %d/%d...`, no, this.program.length)
 
-    enum Mechanism {
-      NONE = 'None',
-      KERNEL = 'Kernel',
-      INTERP = 'Interp'
-    }
-
-    let mechanism = Mechanism.NONE
-
     if (!instruction)
       throw new Error(`Instruction ${no} not found.`)
 
@@ -125,21 +97,15 @@ export class Interpreter {
 
     let op: IsaEntry | void
 
-    op = this.lookupCode(code)
-    if (op) {
-      mechanism = Mechanism.INTERP
-    }
-    else {
-      op = this.kernel.lookupOp(code)
-      if (op)
-        mechanism = Mechanism.KERNEL
-    }
+    op = this.kernel.lookupOp(code)
 
     if (!op)
       throw new Error(`Operation "${code}" not found.`)
 
-    debug(`#run> #%d "%s" (%s): %o`, no, code, mechanism, args)
+    debug(`#run> #%d "%s": %o`, no, code, args)
 
+    // Turn the original objects representing arguments into real arguments
+    // bound to memory and I/O.
     const boundArgs = args.map(op => {
       if (op.type === ArgType.IMMEDIATE)
         return new Immediate(Number(op.value))
@@ -154,9 +120,9 @@ export class Interpreter {
     })
 
     if (boundArgs.length > 0)
-      info(`%s (%s): %o`, code, mechanism, boundArgs.map(a => a.summary))
+      info(`%s: %o`, code, boundArgs.map(a => a.summary))
     else
-      info(`%s (%s)`, code, mechanism)
+      info(`%s`, code)
 
     op.fn(...boundArgs)
     memoryDebug(`Input=%o`, this.registers.io[0].data)
@@ -193,38 +159,4 @@ export class Interpreter {
     return table
   }
 
-  private lookupCode(code: string): IsaEntry | void {
-    return this.isa.find((entry: IsaEntry) => entry.code === code)
-  }
-
-  /** Change instruction pointer to point to dest. */
-  private jump(dest: Immediate): void {
-    const addr = dest.read()
-    const ip = this.registers.table.ip
-    ip.write(addr - 1)
-  }
-
-  /**
-   * Return a binary function taking a `src` to examine and a `dest` to jump
-   * to, using `predicate` to decide to jump or not.
-   */
-  private jumpIf(predicate: Function) {
-    /**
-     * @param dest The op address being jumped to.
-     * @param src The thing being examined. Defaults to accum.
-     */
-    return (dest: InstructionAddress, src: DataAddress = this.registers.table.accum) => {
-      debug(`Examining source address %o (value is %o) to see if I should jump to dest %o...`, src.address, src.read(), dest.read());
-      if (!predicate(src.read())) {
-        debug(`Predicate was false. No jump.`)
-        return
-      }
-
-      const addr = dest.read()
-      const ip = this.registers.table.ip
-      debug(`Predicate was true. Jumping from %d to %d...`, ip.read(), addr)
-      ip.write(addr - 1)
-      debug(`IP is now %o.`, ip.read())
-    }
-  }
 }

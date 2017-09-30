@@ -14,11 +14,21 @@ const log = Debug('Mel:Registers')
  * I initialize a table of registers from provided memory and I/O. The set of
  * instructions will operate mostly on these registers, which modifies the
  * underlying memory and channels.
+ * 
+ * API:
+ * - Table
+ * - Get flag?: name
+ * - Set flag: name.
+ * - Unset flag: name.
  */
 export class Registers {
   static NUM_REGISTERS = 11
 
   public readonly table: { [name: string]: DataAddress }
+
+  private flagNames = [
+    `halt`
+  ]
 
   /** Defines the names and the order of registers in memory. */
   private names = [
@@ -54,5 +64,26 @@ export class Registers {
     })
 
     this.table.ip.write(Interpreter.STARTING_INSTRUCTION)
+  }
+
+  public getFlag(name: string): boolean {
+    const bit = this.flagNames.indexOf(name)
+    return Boolean(this.table.flags.read() & bit)
+  }
+
+  public setFlag(name: string): void {
+    const oldFlags = this.table.flags.read()
+    const bit = this.flagNames.indexOf(name)
+    this.table.flags.write(oldFlags | bit)
+  }
+
+  public unsetFlag(name: string): void {
+    const oldFlags = this.table.flags.read()
+    const bit = this.flagNames.indexOf(name)
+    this.table.flags.write(oldFlags & bit)
+  }
+
+  public set halt(flag: boolean) {
+    this.setFlag('halt')
   }
 }
