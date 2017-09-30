@@ -21,6 +21,7 @@ const debug = Debug('Mel:Interpreter:Debug')
  * - Step.
  */
 export class Interpreter {
+  /** The interpreter will run at most this many instructions. */
   static MAX_OPS = 50
 
   static STARTING_INSTRUCTION = 1
@@ -33,11 +34,8 @@ export class Interpreter {
 
   private program: Instruction[]
 
-  /** When this flag is set, the interpreter terminates at the end of the current step. */
-  // TODO consider putting htis in the status register.
-  private halt = false
-
-  private loopCounter = 0
+  /** During a program run, I keep track of the number of steps I've preformed. */
+  private loopCounter: number
 
   constructor(registers: Registers, memory: Word[], kernel: Kernel) {
     this.registers = registers
@@ -45,11 +43,15 @@ export class Interpreter {
     this.kernel = kernel
   }
 
+  /**
+   * I run the given program until completion.
+   */
   public run(program: Instruction[]): Promise<void> {
     return new Promise((resolve, reject) => {
       info(`Running program of %d instructions...`, program.length)
 
       this.program = program
+      this.loopCounter = 0
 
       if (process.env['STEP']) {
         info(`Running program in step-by-step mode. Press enter to step forward.`)
@@ -130,13 +132,13 @@ export class Interpreter {
 
     if (newNo > this.program.length) {
       info(`End of program. Terminated on op #%o`, oldNo)
-      this.halt = true
+      this.registers.flags.set(Flags.HALT)
     }
 
     this.loopCounter++
     if (this.loopCounter > Interpreter.MAX_OPS) {
       info(`Too many ops. Terminated on op #%o`, oldNo)
-      this.halt = true
+      this.registers.flags.set(Flags.HALT)
     }
   }
 

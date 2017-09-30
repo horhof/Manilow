@@ -14,13 +14,15 @@ import { Port, Channel } from './Io'
 const log = Debug('Mel:Registers')
 
 export enum Flags {
-  HALT = 1
+  HALT
 }
 
 /**
  * I represent a set of status flags held in the "flags" register.
  */
 class FlagsRegister {
+  static NUM_FLAGS = 1
+
   private registers: Registers
 
   constructor(registers: Registers) {
@@ -29,7 +31,7 @@ class FlagsRegister {
 
   /** Return the given flag as a boolean. */
   public get(bit: number): boolean {
-    return Boolean(this.register.read() & bit)
+    return Boolean(this.register.read() | bit)
   }
 
   public set(bit: number): void {
@@ -43,13 +45,19 @@ class FlagsRegister {
   }
 
   /** Flip the bit for the given flag. */
-  public toggle(bit: number): void {
+  public toggle(bitNo: number): void {
+    const bit = 1 << bitNo
     const old = this.register.read()
     this.register.write(old ^ bit)
   }
 
   private get register(): DataAddress {
     return this.registers.table.flags
+  }
+
+  private inspect() {
+    const halt = this.get(Flags.HALT)
+    return { halt }
   }
 }
 
