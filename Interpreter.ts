@@ -36,7 +36,9 @@ function lte(a: Word, b: Word): boolean { return a < b }
  * - Step.
  */
 export class Interpreter {
-  static MAX_OPS = 50
+  static MAX_INSTRUCTIONS = 50
+
+  static STARTING_INSTRUCTION = 1
 
   private registers: Registers
 
@@ -167,7 +169,7 @@ export class Interpreter {
     }
 
     this.loopCounter++
-    if (this.loopCounter > Interpreter.MAX_OPS) {
+    if (this.loopCounter > Interpreter.MAX_INSTRUCTIONS) {
       info(`Too many ops. Terminated on op #%o`, oldNo)
       this.halt = true
     }

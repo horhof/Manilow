@@ -26,7 +26,7 @@ const source = fs.readFileSync('source.s', 'utf-8')
 const program = parser.getProgram(source)
 
 log(`Initializing memory...`)
-let memory: Word[] = Array(Registers.MAX).fill(0)
+let memory: Word[] = Array(Registers.NUM_REGISTERS).fill(0)
 
 log(`Initializing I/O channels...`)
 const input = new Channel([3, 2, 0, 5, 17, 0, 23])
