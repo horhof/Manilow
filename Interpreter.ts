@@ -1,6 +1,6 @@
 import * as Debug from 'debug'
 
-import { Word, Immediate, DataAddress, InstructionAddress, Ptr } from './Word'
+import { Word, Immediate, DataAddress, InstructionAddress, Pointer } from './Word'
 import { Registers } from './Registers'
 import { Instruction, ArgType } from './Parser'
 import { Kernel } from './Kernel'
@@ -144,7 +144,7 @@ export class Interpreter {
       if (!op.deref)
         return new DataAddress(Number(op.value), this.memory)
 
-      return new Ptr(Number(op.value), this.memory)
+      return new Pointer(Number(op.value), this.memory)
     })
 
     if (boundArgs.length > 0)

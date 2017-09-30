@@ -3,9 +3,9 @@
  * arguments to operations.
  * 
  * Classes:
- * - ImmediateValue
- * - OpAddr
- * - Addr
+ * - Immediate
+ * - DataAddress
+ * - InstructionAddress
  * - Ptr
  * - Channel
  * - Port
@@ -124,7 +124,7 @@ export class InstructionAddress extends Immediate {
  * An operand whose value is the address that itself contains an
  * address where the value is held.
  */
-export class Ptr extends DataAddress {
+export class Pointer extends DataAddress {
   public get address(): number {
     return this.memory[this.data]
   }
