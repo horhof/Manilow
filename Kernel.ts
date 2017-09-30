@@ -27,6 +27,7 @@ export interface IsaEntry {
 // Unary transforms.
 function increment(a: Word): Word { return a + 1 }
 function decrement(a: Word): Word { return a - 1 }
+function negate(a: Word): Word { return -a }
 function double(a: Word): Word { return a * 2 }
 function square(a: Word): Word { return Math.pow(a, 2) }
 function sqrt(a: Word): Word { return Math.sqrt(a) }
@@ -77,6 +78,7 @@ export class Kernel {
     { code: 'mul', fn: this.applySrcToDest(mul) },
     { code: 'inc', fn: this.applyToDest(increment) },
     { code: 'dec', fn: this.applyToDest(decrement) },
+    { code: 'negate', fn: this.applyToDest(negate) },
     { code: 'double', fn: this.applyToDest(double) },
     { code: 'square', fn: this.applyToDest(square) },
     { code: 'sqrt', fn: this.applyToDest(sqrt) },
