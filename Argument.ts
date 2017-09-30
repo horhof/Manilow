@@ -1,6 +1,10 @@
 /**
  * This file defines classes created by the parser for representing the
  * arguments to operations that pertain to memory.
+ *
+ * Types:
+ * - Word
+ * - Label
  * 
  * Classes:
  * - Immediate
@@ -12,7 +16,10 @@ import * as Debug from 'debug'
 
 const log = Debug('Mel:Word')
 
+/** A machine word holding data. */
 export type Word = number
+
+/** Refers to an instruction within the program. */
 export type Label = string
 
 /**
