@@ -6,6 +6,7 @@
 // Provide defaults for debugging if not defined.
 process.env['DEBUG'] = process.env['DEBUG'] || [
   'Mel:Vm',
+  'Mel:Kernel',
   'Mel:Registers',
   'Mel:Parser',
   'Mel:Memory',

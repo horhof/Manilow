@@ -62,13 +62,9 @@ export class Kernel {
   public registers: Registers
 
   private isa: IsaEntry[] = [
+    // Interpreter / loop.
     { code: 'noop', fn: () => undefined },
-    {
-      code: 'halt', fn: () => {
-        log(`Halt! Exiting...`);
-        this.registers.flags.set(Flags.HALT)
-      }
-    },
+    { code: 'halt', fn: () => { this.registers.flags.set(Flags.HALT) } },
     // Data manipulation.
     { code: 'copy', fn: this.copy.bind(this) },
     { code: 'zero', fn: this.zero.bind(this) },
@@ -87,7 +83,7 @@ export class Kernel {
     // Jumps.
     { code: 'jump', fn: this.jump.bind(this) },
     { code: 'jump zero', fn: this.jumpIf(zero) },
-    { code: 'jump not jero', fn: this.jumpIf(nonZero) },
+    { code: 'jump nonzero', fn: this.jumpIf(nonZero) },
   ]
 
   constructor(registers: Registers) {
@@ -112,12 +108,18 @@ export class Kernel {
     dest.write(src.read())
   }
 
+  /**
+   * I zero the given address.
+   * 
+   * @param [dest] Destination address. Defaults to accum.
+   */
   private zero(dest: DataAddress = this.registers.table.accum): void {
     this.copy(new Immediate(0), dest)
   }
 
   /**
-   * I read from the input channel and place the result into the destination.
+   * I read from the input channel and place the result into the destination
+   * address.
    * 
    * - Input. (Read data into accum)
    * - Input: a. (Read data into a)
@@ -128,6 +130,11 @@ export class Kernel {
     dest.write(this.registers.table.input.read())
   }
 
+  /**
+   * I write to the output channel from the source address.
+   *
+   * @param [src] Data address to read from. Defaults to accum.
+   */
   private out(src: DataAddress = this.registers.table.accum): void {
     this.registers.table.output.write(src.read())
   }
@@ -166,7 +173,9 @@ export class Kernel {
     }
   }
 
-  /** Change instruction pointer to point to dest. */
+  /**
+   * Change instruction pointer to point to dest.
+   */
   private jump(dest: Immediate): void {
     const addr = dest.read()
     const ip = this.registers.table.ip
