@@ -32,11 +32,11 @@ export interface Instruction {
  */
 export enum ArgType {
   // An immediate value. See class Immediate.
-  IMMEDIATE = 'IMMEDIATE',
+  IMMEDIATE = 'ValueOf',
   // An address of a piece of data. See class DataAddress.
-  DATA_ADDRESS = 'DATA_ADDR',
+  DATA_ADDRESS = 'DataAt',
   // An address of an instruction. See class InstructionAddress.
-  INSTRUCTION_ADDRESS = 'INST_ADDR'
+  INSTRUCTION_ADDRESS = 'InstructionAt'
 }
 
 /**
@@ -189,7 +189,7 @@ export class Parser {
         }
       })
       .filter(x => x)
-    
+
     // The second pass collects the labels into a map where the text of the label
     // maps to the number of the instruction.
     instructions.forEach(instruction => {
@@ -358,7 +358,7 @@ export class Parser {
     }
 
     const radix = radixTable[code]
-  //log(`#parseImm> Code=%O RadTab=%O Radix=%O`, code, radixTable, radix)
+    //log(`#parseImm> Code=%O RadTab=%O Radix=%O`, code, radixTable, radix)
 
     return {
       type: ArgType.IMMEDIATE,

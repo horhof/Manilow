@@ -30,14 +30,10 @@ export type Label = string
  * - Write: word.
  */
 class Argument {
-  /**
-   * I am a wrapper around a single piece of data.
-   */
+  /** I am a wrapper around a single piece of data. */
   public readonly data: number
 
-  /** 
-   * Memory is used for addresses/pointers but not for immediate values.
-   */
+  /** Memory is used for addresses/pointers but not for immediate values. */
   protected readonly memory: Word[]
 
   static ZERO = 0
@@ -144,7 +140,7 @@ export class Channel {
 
   public pull(): Word {
     const value = this.data.shift()
-    if (!value)
+    if (value == null)
       throw new Error(`Input channel was empty at time of access.`)
     return value
   }

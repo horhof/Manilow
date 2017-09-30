@@ -28,7 +28,7 @@ log(`Initializing memory...`)
 let memory: Word[] = Array(Registers.MAX).fill(0)
 
 log(`Initializing I/O channels...`)
-const input = new Channel([3123, 4, 9234, 9, 10000, 23])
+const input = new Channel([3, 2, 0, 5, 17, 0, 23])
 const output = new Channel()
 let io: Channel[] = [input, output]
 
