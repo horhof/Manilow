@@ -104,7 +104,7 @@ export class Kernel {
    * @param [src] Source value or address. Defaults to data.
    * @param [dest] Destination address. Defaults to accum.
    */
-  private copy(src: Immediate | DataAddress = this.registers.table.data, dest: DataAddress = this.registers.table.accum): void {
+  private copy(src: Immediate | DataAddress = this.registers.data, dest: DataAddress = this.registers.accum): void {
     dest.write(src.read())
   }
 
@@ -113,7 +113,7 @@ export class Kernel {
    * 
    * @param [dest] Destination address. Defaults to accum.
    */
-  private zero(dest: DataAddress = this.registers.table.accum): void {
+  private zero(dest: DataAddress = this.registers.accum): void {
     this.copy(new Immediate(0), dest)
   }
 
@@ -126,8 +126,8 @@ export class Kernel {
    * 
    * @param [dest] Destination address. Defaults to accum.
    */
-  private in(dest: DataAddress = this.registers.table.accum): void {
-    dest.write(this.registers.table.input.read())
+  private in(dest: DataAddress = this.registers.accum): void {
+    dest.write(this.registers.input.read())
   }
 
   /**
@@ -135,8 +135,8 @@ export class Kernel {
    *
    * @param [src] Data address to read from. Defaults to accum.
    */
-  private out(src: DataAddress = this.registers.table.accum): void {
-    this.registers.table.output.write(src.read())
+  private out(src: DataAddress = this.registers.accum): void {
+    this.registers.output.write(src.read())
   }
 
   /**
@@ -153,7 +153,7 @@ export class Kernel {
    * immediate value.
    */
   private applySrcToDest(fn: BinaryTransform) {
-    return (src: Immediate = this.registers.table.data, dest: Immediate = this.registers.table.accum): void => {
+    return (src: Immediate = this.registers.data, dest: Immediate = this.registers.accum): void => {
       const result = fn(dest.read(), src.read())
       dest.write(result)
     }
@@ -167,7 +167,7 @@ export class Kernel {
    * - Apply src to dest: a. (Call fn with a)
    */
   private applyToDest(fn: UnaryTransform) {
-    return (dest: DataAddress = this.registers.table.accum): void => {
+    return (dest: DataAddress = this.registers.accum): void => {
       const existing = dest.read()
       dest.write(fn(existing))
     }
@@ -178,7 +178,7 @@ export class Kernel {
    */
   private jump(dest: Immediate): void {
     const addr = dest.read()
-    const ip = this.registers.table.ip
+    const ip = this.registers.ip
     ip.write(addr - 1)
   }
 
@@ -191,7 +191,7 @@ export class Kernel {
      * @param dest The op address being jumped to.
      * @param src The thing being examined. Defaults to accum.
      */
-    return (dest: InstructionAddress, src: DataAddress = this.registers.table.accum) => {
+    return (dest: InstructionAddress, src: DataAddress = this.registers.accum) => {
       log(`Examining source address %o (value is %o) to see if I should jump to dest %o...`, src.address, src.read(), dest.read());
       if (!predicate(src.read())) {
         log(`Predicate was false. No jump.`)
@@ -199,7 +199,7 @@ export class Kernel {
       }
 
       const addr = dest.read()
-      const ip = this.registers.table.ip
+      const ip = this.registers.ip
       log(`Predicate was true. Jumping from %d to %d...`, ip.read(), addr)
       ip.write(addr - 1)
       log(`IP is now %o.`, ip.read())

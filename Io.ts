@@ -43,7 +43,7 @@ export class Channel {
  * I am an address not for a memory location but an I/O channel. I read from
  * and write to the channel's queue.
  */
-export class Port extends DataAddress {
+export class PortAddress extends DataAddress {
   private readonly channels: Channel[]
 
   constructor(data: number, channels: Channel[]) {
