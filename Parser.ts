@@ -132,7 +132,7 @@ export class Parser {
    * During the first pass, I build up a map of all labels with the number of
    * the instruction that they point to.
    */
-  private labelMap: { [index: string]: number }
+  private blocks: { [label: string]: number }
 
   /**
    * I transform a string of source code into a list of instructions.
@@ -152,7 +152,7 @@ export class Parser {
    */
   private assignLabels(lines: string[]): LabeledSource[] {
     this.instructionCount = 1
-    this.labelMap = {}
+    this.blocks = {}
 
     let labels: Args.Label[] = []
 
@@ -179,7 +179,7 @@ export class Parser {
     instructions.forEach(instruction => {
       if (instruction.labels.length > 0) {
         instruction.labels.forEach(label => {
-          this.labelMap[label] = instruction.no
+          this.blocks[label] = instruction.no
           log(`Assigning label "%s" the value of instruction #%d.`, label, instruction.no)
         })
       }
@@ -287,7 +287,7 @@ export class Parser {
         switch (this.identifyArg(argText)) {
           case Args.ArgType.BLOCK:
             //log(`#getArgs> Block=%s`, argText)
-            return new Args.Block(this.labelMap[argText])
+            return new Args.Block(this.blocks[argText])
           case Args.ArgType.LITERAL:
             //log(`#getArgs> Literal=%s`, argText)
             return new Args.Constant(this.parseLiteral(argText))
