@@ -134,16 +134,18 @@ export class Interpreter {
    */
   private bindArguments(args: Arg[]): Argument[] {
     return args.map((op: Arg): Argument => {
+      const value = Number(op.value)
+
       if (op.type === ArgType.IMMEDIATE)
-        return new Immediate(Number(op.value))
+        return new Immediate(value)
 
       if (op.type === ArgType.INSTRUCTION_ADDRESS)
-        return new InstructionAddress(Number(op.value), this.memory)
+        return new InstructionAddress(value, this.memory)
 
       if (!op.deref)
-        return new DataAddress(Number(op.value), this.memory)
+        return new DataAddress(value, this.memory)
 
-      return new Pointer(Number(op.value), this.memory)
+      return new Pointer(value, this.memory)
     })
   }
 }

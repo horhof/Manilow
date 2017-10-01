@@ -2,9 +2,9 @@
  * Defines the parser.
  * 
  * Types:
- * - Arg
  * - Instruction
  * - ArgType
+ * - Arg
  * 
  * Classes:
  * - Parser
