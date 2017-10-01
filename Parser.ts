@@ -307,29 +307,6 @@ export class Parser {
           //default:
           //log(`Error: couldn't identify argument "%s".`, argText)
         }
-
-        /*
-        const { block, literal, address, memory, pointer } = this.identifyArg(argText)
-        log(`#getArgs> Block=%o Literal=%o Address=%o Memory=%o Pointer=%o`, block, literal, address, memory, pointer)
-
-        if (block)
-          return new Args.InstructionAddress(this.labelMap[argText])
-        else if (literal)
-          return new Args.Constant(this.parseLiteral(argText))
-        else {
-          const tail = Number(argText.replace(/^\W+/, ''))
-          log(`#getArgs> Tail=%d`, tail)
-
-          if (address)
-            return new Args.Constant(tail)
-          else if (memory)
-            return new Args.Variable(tail)
-          else if (pointer)
-            return new Args.Pointer(tail)
-          else
-            log(`Error: couldn't identify argument "%s".`, argText)
-        }
-        */
       })
       .filter(x => x)
   }
@@ -360,32 +337,6 @@ export class Parser {
       return Args.ArgType.POINTER
     else
       throw new Error(`Error: unidentified argument "${argText}"`)
-  }
-
-  /**
-   * I return a boolean map of which kind of argument this represents.
-   * 
-  private identifyArg(argText: string) {
-    const firstChar = argText[0]
-
-    let block = false
-    let literal = false
-    let address = false
-    let memory = false
-    let pointer = false
-
-    if (/^[a-z]/.test(argText))
-      block = true
-    else if (/^0[a-z]/.test(argText))
-      literal = true
-    else if (firstChar === Parser.ADDRESS_OPERATOR)
-      address = true
-    else if (firstChar === Parser.MEMORY_OPERATOR)
-      memory = true
-    else if (firstChar === Parser.DEREF_OPERATOR)
-      pointer = true
-
-    return { block, literal, address, memory, pointer }
   }
 
   /**
