@@ -33,7 +33,7 @@ export interface Instruction {
  */
 export enum ArgType {
   // An immediate value. See class Immediate.
-  IMMEDIATE = 'ValueOf',
+  CONSTANT = 'ValueOf',
   // An address of a piece of data. See class DataAddress.
   DATA_ADDRESS = 'DataAt',
   // An address of an instruction. See class InstructionAddress.
@@ -362,7 +362,7 @@ export class Parser {
     //log(`#parseImm> Code=%O RadTab=%O Radix=%O`, code, radixTable, radix)
 
     return {
-      type: ArgType.IMMEDIATE,
+      type: ArgType.CONSTANT,
       value: parseInt(text.slice(2), radix)
     }
   }

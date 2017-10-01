@@ -140,7 +140,7 @@ export class Interpreter {
     return args.map((op: Arg): Argument => {
       const value = Number(op.value)
 
-      if (op.type === ArgType.IMMEDIATE)
+      if (op.type === ArgType.CONSTANT)
         return new Immediate(value)
 
       if (op.type === ArgType.INSTRUCTION_ADDRESS)
