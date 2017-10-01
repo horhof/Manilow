@@ -11,10 +11,11 @@ process.env['DEBUG'] = process.env['DEBUG'] || [
   'Mel:Registers',
   'Mel:Parser',
   'Mel:Memory',
-  'Mel:Interpreter',
-  'Mel:Interpreter:Debug',
+  'Mel:Runtime',
+  'Mel:Runtime:Debug',
   'Mel:I/O'
 ].join(',')
+console.log('Main entry> DEBUG=', process.env['DEBUG'])
 
 process
   .on('unhandledRejection', (reason, p) => {
