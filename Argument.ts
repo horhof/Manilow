@@ -39,13 +39,13 @@ export type Label = string
  * 2. the data that operations act on,
  * 3. the blocks that organize operations.
  * 
- * |  Type   |  Example  | Starts with |
- * | :-----: | :-------: | :---------- |
- * |  Block  |  `reset`  | Letter      |
- * | Literal |  `0d13`   | 0 + letter  |
- * | Address | `&record` | `&`         |
- * | Memory  | `@record` | `@`         |
- * | Pointer | `*record` | `*`         |
+ * |  Type   |  Class   |  Example  | Starts with |
+ * | ------- | -------- | --------- | ----------- |
+ * | Block   | Block    | `reset`   | Letter      |
+ * | Literal | Constant | `0d13`    | 0 + letter  |
+ * | Address | Constant | `&record` | `&`         |
+ * | Memory  | Variable | `@record` | `@`         |
+ * | Pointer | Pointer  | `*record` | `*`         |
  */
 export enum ArgType {
   BLOCK,
