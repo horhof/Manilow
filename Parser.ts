@@ -313,14 +313,6 @@ export class Parser {
 
   /**
    * I return the type of argument represented by the given text.
-   * 
-   * |  Type   |  Example  | Starts with |
-   * | :-----: | :-------: | :---------- |
-   * |  Block  |  `reset`  | Letter      |
-   * | Literal |  `0d13`   | 0 + letter  |
-   * | Address | `&record` | `&`         |
-   * | Memory  | `@record` | `@`         |
-   * | Pointer | `*record` | `*`         |
    */
   private identifyArg(argText: string): Args.ArgType {
     const firstChar = argText[0]
