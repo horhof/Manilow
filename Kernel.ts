@@ -10,7 +10,7 @@
 
 import * as Debug from 'debug'
 
-import { Word, Immediate, DataAddress, InstructionAddress } from './Argument'
+import { Word, Argument, Immediate, DataAddress, InstructionAddress } from './Argument'
 import { Registers, Flags } from './Registers'
 
 const log = Debug('Mel:Kernel')
@@ -21,7 +21,7 @@ type TernaryTransform = { (a: Word, b: Word, c: Word): Word }
 
 export interface IsaEntry {
   code: string
-  fn: { (...x: Immediate[]): void }
+  fn: { (...x: Argument[]): void }
 }
 
 // Unary transforms.

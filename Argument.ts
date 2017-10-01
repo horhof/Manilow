@@ -7,6 +7,7 @@
  * - Label
  * 
  * Classes:
+ * - Argument
  * - Immediate
  * - DataAddress
  * - InstructionAddress
@@ -33,7 +34,7 @@ export type Label = string
  * - Read = word of data
  * - Write: word.
  */
-class Argument {
+export class Argument {
   /** I am a wrapper around a single piece of data. */
   public readonly data: number
 
