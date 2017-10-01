@@ -4,14 +4,14 @@
 
 import * as Debug from 'debug'
 
-import { Word, Argument, Constant, Variable, Pointer, InstructionAddress, PortAddress } from './Argument'
+import { Word, Argument, Constant, Variable, Pointer, Block, PortAddress } from './Argument'
 import { Registers, Flags } from './Registers'
 import { InstructionData } from './Parser'
 import { Kernel } from './Kernel'
 
-const info = Debug('Mel:Interpreter')
+const info = Debug('Mel:Runtime')
+const debug = Debug('Mel:Runtime:Debug')
 const memoryDebug = Debug('Mel:Memory')
-const debug = Debug('Mel:Interpreter:Debug')
 
 /**
  * I am given a parsed program together with the memory / registers that store
@@ -27,7 +27,7 @@ export class Runtime {
    * The interpreter will run at most this many instructions, regardless of
    * whether the program has finished or not.
    */
-  static MAX_OPS = 1000
+  static MAX_OPS = 100
 
   static STARTING_INSTRUCTION = 1
 
@@ -124,7 +124,8 @@ export class Runtime {
     memoryDebug(`Output=%o`, this.registers.io[1].data)
     memoryDebug(`Memory=%o`, this.memory)
 
-    const newNo = no + 1
+    // Re-read the instruction pointer in case an operation has manipulated it.
+    const newNo = this.registers.instr.read() + 1
     this.registers.instr.write(newNo)
 
     if (newNo > this.source.length) {
