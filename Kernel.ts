@@ -103,8 +103,8 @@ export class Kernel {
    * - Copy: a. (Copy a to accum)
    * - Copy: a, b. (Copy a to b)
    * 
-   * @param [src] Source value or address. Defaults to data.
-   * @param [dest] Destination address. Defaults to accum.
+   * @param src Source value or address. Defaults to data.
+   * @param dest Destination address. Defaults to accum.
    */
   private copy(src: Constant | Variable = this.registers.data, dest: Variable = this.registers.accum): void {
     dest.write(src.read())
@@ -113,7 +113,7 @@ export class Kernel {
   /**
    * I zero the given address.
    * 
-   * @param [dest] Destination address. Defaults to accum.
+   * @param dest Destination address. Defaults to accum.
    */
   private zero(dest: Variable = this.registers.accum): void {
     this.copy(new Constant(0), dest)
@@ -126,7 +126,7 @@ export class Kernel {
    * - Input. (Read data into accum)
    * - Input: a. (Read data into a)
    * 
-   * @param [dest] Destination address. Defaults to accum.
+   * @param dest Destination address. Defaults to accum.
    */
   private in(dest: Variable = this.registers.accum): void {
     dest.write(this.registers.input.read())

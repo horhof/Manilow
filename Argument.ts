@@ -160,7 +160,7 @@ export class Variable extends Argument {
   }
 
   public get summary(): string {
-    return `Address ${this.address} (value is ${this.read()})`
+    return `Variable ${this.address} (value is ${this.read()})`
   }
 }
 
@@ -231,6 +231,6 @@ export class PortAddress extends Variable {
   }
 
   public get summary(): string {
-    return `Port @${this.address} ( = ${this.read()})`
+    return `Port ${this.address} ( = ${this.read()})`
   }
 }
