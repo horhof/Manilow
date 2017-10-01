@@ -57,8 +57,8 @@ export enum ArgType {
 
 /**
  * I am an abstract class representing an entity capable of being an argument
- * of an operation. Arguments wrap data and they read and write to it in
- * different ways.
+ * of an operation. Arguments always wrap some kind of value and control the
+ * reading and writing of it.
  *  
  * API:
  * - Data
@@ -67,8 +67,10 @@ export enum ArgType {
  * - Write: word.
  */
 export class Argument {
-  /** I am a wrapper around a single piece of data. */
-  public readonly data: number
+  /**
+   * I am a wrapper around this single piece of data.
+   */
+  protected readonly data: number
 
   static ZERO = 0
 
@@ -81,12 +83,12 @@ export class Argument {
   }
 
   public write(value: Word): void {
-    // Overridden.
+    // Overridden by child classes.
   }
 
   /** A human-readable representation of this argument. */
   public get summary(): string {
-    // Overridden.
+    // Overridden by child classes.
     return ``
   }
 }
