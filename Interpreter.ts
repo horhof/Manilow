@@ -4,9 +4,9 @@
 
 import * as Debug from 'debug'
 
-import { Word, Immediate, DataAddress, InstructionAddress, Pointer } from './Argument'
+import { Word, Argument, Immediate, DataAddress, InstructionAddress, Pointer } from './Argument'
 import { Registers, Flags } from './Registers'
-import { Instruction, ArgType } from './Parser'
+import { Instruction, Arg, ArgType } from './Parser'
 import { Kernel } from './Kernel'
 
 const info = Debug('Mel:Interpreter')
@@ -101,20 +101,7 @@ export class Interpreter {
 
     debug(`#run> #%d "%s": %o`, no, code, args)
 
-    // Turn the original objects representing arguments into real arguments
-    // bound to memory and I/O.
-    const boundArgs = args.map(op => {
-      if (op.type === ArgType.IMMEDIATE)
-        return new Immediate(Number(op.value))
-
-      if (op.type === ArgType.INSTRUCTION_ADDRESS)
-        return new InstructionAddress(Number(op.value), this.memory)
-
-      if (!op.deref)
-        return new DataAddress(Number(op.value), this.memory)
-
-      return new Pointer(Number(op.value), this.memory)
-    })
+    const boundArgs = this.bindArguments(args)
 
     if (boundArgs.length > 0)
       info(`%s: %o`, code, boundArgs.map(a => a.summary))
@@ -140,5 +127,24 @@ export class Interpreter {
       info(`Too many ops. Terminated on op #%o`, oldNo)
       this.registers.flags.set(Flags.HALT)
     }
+  }
+
+  /**
+   * Turn the original objects representing arguments into real arguments bound
+   * to memory and I/O.
+   */
+  private bindArguments(args: Arg[]): Argument[] {
+    return args.map((op: Arg): Argument => {
+      if (op.type === ArgType.IMMEDIATE)
+        return new Immediate(Number(op.value))
+
+      if (op.type === ArgType.INSTRUCTION_ADDRESS)
+        return new InstructionAddress(Number(op.value), this.memory)
+
+      if (!op.deref)
+        return new DataAddress(Number(op.value), this.memory)
+
+      return new Pointer(Number(op.value), this.memory)
+    })
   }
 }

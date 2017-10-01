@@ -2,6 +2,7 @@
  * Defines the parser.
  * 
  * Types:
+ * - Arg
  * - Instruction
  * - ArgType
  * 
@@ -53,7 +54,7 @@ export enum ArgType {
  *     14
  *     *4
  */
-interface Arg {
+export interface Arg {
   type: ArgType
   value: number | string
   deref?: boolean
