@@ -10,7 +10,7 @@
 
 import * as Debug from 'debug'
 
-import { Word, Argument, Constant, Variable, InstructionAddress } from './Argument'
+import { Word, Argument, Constant, Variable, Block } from './Argument'
 import { Registers, Flags } from './Registers'
 
 const log = Debug('Mel:Kernel')
@@ -181,7 +181,9 @@ export class Kernel {
   private jump(dest: Constant): void {
     const addr = dest.read()
     const ip = this.registers.instr
-    ip.write(addr - 1)
+    log(`#jump> Addr=%o IP=%d`, addr, ip.read())
+    ip.write(addr + 1)
+    log(`#jump> After jump. IP=%d`, ip.read())
   }
 
   /**
@@ -193,7 +195,7 @@ export class Kernel {
      * @param dest The op address being jumped to.
      * @param src The thing being examined. Defaults to accum.
      */
-    return (dest: InstructionAddress, src: Variable = this.registers.accum) => {
+    return (dest: Block, src: Variable = this.registers.accum) => {
       log(`Examining source address %o (value is %o) to see if I should jump to dest %o...`, src.address, src.read(), dest.read());
       if (!predicate(src.read())) {
         log(`Predicate was false. No jump.`)
@@ -203,7 +205,7 @@ export class Kernel {
       const addr = dest.read()
       const ip = this.registers.instr
       log(`Predicate was true. Jumping from %d to %d...`, ip.read(), addr)
-      ip.write(addr - 1)
+      ip.write(addr + 1)
       log(`IP is now %o.`, ip.read())
     }
   }

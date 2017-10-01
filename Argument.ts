@@ -113,9 +113,9 @@ export class Constant extends Argument {
  * I am an operand pointing to an instruction. Operations will use operands
  * like these when doing jumps.
  */
-export class InstructionAddress extends Constant {
+export class Block extends Constant {
   public get summary(): string {
-    return `Instruction #${this.data}`
+    return `Block #${this.data}`
   }
 }
 

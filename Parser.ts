@@ -287,7 +287,7 @@ export class Parser {
         switch (this.identifyArg(argText)) {
           case Args.ArgType.BLOCK:
             //log(`#getArgs> Block=%s`, argText)
-            return new Args.InstructionAddress(this.labelMap[argText])
+            return new Args.Block(this.labelMap[argText])
           case Args.ArgType.LITERAL:
             //log(`#getArgs> Literal=%s`, argText)
             return new Args.Constant(this.parseLiteral(argText))
