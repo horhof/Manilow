@@ -89,15 +89,19 @@ export class Interpreter {
     debug(`#step> IP=%o Op=%o`, no, instruction)
     info(`Running instruction %d/%d...`, no, this.program.length)
 
-    if (!instruction)
-      throw new Error(`Instruction ${no} not found.`)
+    if (!instruction) {
+      info(`Instruction ${no} not found.`)
+      return this.halt()
+    }
 
     const { code, args, comment } = instruction
 
     const op = this.kernel.lookupOp(code)
 
-    if (!op)
-      throw new Error(`Operation "${code}" not found.`)
+    if (!op) {
+      info(`Instruction %d (code "%s") not found.`, no, code)
+      return this.halt()
+    }
 
     debug(`#run> #%d "%s": %o`, no, code, args)
 
@@ -118,13 +122,13 @@ export class Interpreter {
 
     if (newNo > this.program.length) {
       info(`End of program. Terminated on op #%o.`, no)
-      return this.registers.flags.set(Flags.HALT)
+      return this.halt()
     }
 
     this.loopCounter++
     if (this.loopCounter > Interpreter.MAX_OPS) {
       info(`Too many ops. Terminated on op #%o.`, no)
-      return this.registers.flags.set(Flags.HALT)
+      return this.halt()
     }
   }
 
@@ -147,5 +151,9 @@ export class Interpreter {
 
       return new Pointer(value, this.memory)
     })
+  }
+
+  private halt(): void {
+    this.registers.flags.set(Flags.HALT)
   }
 }
