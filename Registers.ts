@@ -92,9 +92,15 @@ export class Registers {
 
   public io: Channel[]
 
+  /**
+   * A map of variable names to locations within memory.
+   */
+  public heap: { [variable: string]: number }
+
   constructor(memory: Word[], io: Channel[]) {
     this.memory = memory
     this.io = io
+    this.heap = {}
 
     let address = 0
     this.accum = this.initRegister(address++)

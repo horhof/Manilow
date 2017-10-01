@@ -135,6 +135,12 @@ export class Parser {
   private blocks: { [label: string]: number }
 
   /**
+   * During the first pass, I find all uses of a variable label and replace
+   * them with indexes within the heap.
+   */
+  private variables: { [label: string]: number }
+
+  /**
    * I transform a string of source code into a list of instructions.
    */
   public getProgram(source: string): InstructionData[] {

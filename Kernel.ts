@@ -69,6 +69,8 @@ export class Kernel {
     // Data manipulation.
     { code: 'copy', fn: this.copy.bind(this) },
     { code: 'zero', fn: this.zero.bind(this) },
+    // Memory.
+    { code: 'allocate', fn: this.allocate(this) },
     // I/O operations.
     { code: 'in', fn: this.in.bind(this) },
     { code: 'out', fn: this.out.bind(this) },
@@ -208,5 +210,15 @@ export class Kernel {
       ip.write(addr + 1)
       log(`IP is now %o.`, ip.read())
     }
+  }
+
+  private allocate(variable: Variable, words: number): void {
+    const address = this.registers.memory.length
+    log(`#allocate> Pointing label "%d" at address %d...`, variable.read(), address)
+    log(`#allocate> Pointing label "%s" at address %d. (%d words.)`, label, address, words)
+    this.registers.heap.label = address
+    this.registers.heap.label = address
+    this.registers.memory.length += words
+    variable.address = address
   }
 }

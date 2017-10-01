@@ -70,7 +70,7 @@ export class Argument {
   /**
    * I am a wrapper around this single piece of data.
    */
-  protected readonly data: number
+  protected data: number
 
   static ZERO = 0
 
@@ -157,6 +157,10 @@ export class Variable extends Argument {
 
   public get address(): number {
     return this.data
+  }
+
+  public set address(address: number) {
+    this.data = address
   }
 
   public get summary(): string {
