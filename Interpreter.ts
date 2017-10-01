@@ -113,19 +113,18 @@ export class Interpreter {
     memoryDebug(`Output=%o`, this.registers.io[1].data)
     memoryDebug(`Memory=%o`, this.memory)
 
-    const oldNo = this.registers.instr.read()
-    const newNo = oldNo + 1
+    const newNo = no + 1
     this.registers.instr.write(newNo)
 
     if (newNo > this.program.length) {
-      info(`End of program. Terminated on op #%o`, oldNo)
-      this.registers.flags.set(Flags.HALT)
+      info(`End of program. Terminated on op #%o.`, no)
+      return this.registers.flags.set(Flags.HALT)
     }
 
     this.loopCounter++
     if (this.loopCounter > Interpreter.MAX_OPS) {
-      info(`Too many ops. Terminated on op #%o`, oldNo)
-      this.registers.flags.set(Flags.HALT)
+      info(`Too many ops. Terminated on op #%o.`, no)
+      return this.registers.flags.set(Flags.HALT)
     }
   }
 
