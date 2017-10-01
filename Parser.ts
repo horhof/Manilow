@@ -65,7 +65,7 @@ export interface Arg {
  * assigned to their target instruction. The text of the operation has to be
  * further parsed in order to make an Instruction object.
  */
-interface LabelledOp {
+interface LabeledSource {
   no: number
   labels: Label[]
   source: string
@@ -167,15 +167,15 @@ export class Parser {
    * I'm incrementing instructionCount and collecting labels. Then I modify the
    * instructions themselves to assign the labels that pertain to them.
    */
-  private assignLabels(lines: string[]): LabelledOp[] {
+  private assignLabels(lines: string[]): LabeledSource[] {
     this.instructionCount = 1
     this.labelMap = {}
 
     let labels: Label[] = []
 
     // The first pass places the labels directly on the LabelledOp objects.
-    const instructions = <LabelledOp[]>lines
-      .map((line: string): LabelledOp | void => {
+    const instructions = <LabeledSource[]>lines
+      .map((line: string): LabeledSource | void => {
         const no = this.instructionCount
         const { label, source } = this.parseLine(line)
 
@@ -244,7 +244,7 @@ export class Parser {
   /**
    * I take the partially parsed instruction and return the final instruction.
    */
-  private getOp(labelledOp: LabelledOp): Instruction {
+  private getOp(labelledOp: LabeledSource): Instruction {
     const { no, labels, source } = labelledOp
     log(`#getOp> No=%o Labels=%o Source=%o`, no, labels, source)
 
