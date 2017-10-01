@@ -85,9 +85,6 @@ export class Registers {
 
   public output: Port
 
-  /** Stack pointer. */
-  //public stack: Register
-
   /** Instruction pointer. */
   public instr: Register
 
@@ -102,7 +99,6 @@ export class Registers {
     let address = 0
     this.accum = this.initRegister(address++)
     this.data = this.initRegister(address++)
-    //this.stack = this.initRegister(address++)
     this.instr = this.initRegister(address++)
     this.instr.write(Runtime.STARTING_INSTRUCTION)
     this.flags = new FlagsRegister(address++)
