@@ -112,6 +112,7 @@ export class Runtime {
 
     debug(`#step> #%d %s: %o`, no, code, args)
 
+    // Bind the arguments to memory and I/O.
     this.bindArguments(args)
 
     if (args.length > 0)
@@ -125,10 +126,10 @@ export class Runtime {
     memoryDebug(`Memory=%o`, this.memory)
 
     // Re-read the instruction pointer in case an operation has manipulated it.
-    const newNo = this.registers.instr.read() + 1
-    this.registers.instr.write(newNo)
+    const nextNo = this.registers.instr.read() + 1
+    this.registers.instr.write(nextNo)
 
-    if (newNo > this.source.length) {
+    if (nextNo > this.source.length) {
       info(`End of program. Terminated on op #%o.`, no)
       return this.halt()
     }
@@ -148,28 +149,6 @@ export class Runtime {
         arg.link(this.memory)
     })
   }
-
-  /**
-   * Turn the original objects representing arguments into real arguments bound
-   * to memory and I/O.
-   *
-  private bindArguments(args: Arg[]): Argument[] {
-    return args.map((op: Arg): Argument => {
-      const value = Number(op.value)
-
-      if (op.type === ArgType.CONSTANT)
-        return new Constant(value)
-
-      if (op.type === ArgType.INSTRUCTION_ADDRESS)
-        return new Block(value, this.memory)
-
-      if (!op.deref)
-        return new Variable(value, this.memory)
-
-      return new Pointer(value, this.memory)
-    })
-  }
-  */
 
   /** Set the halt flag. The runtime halts on the next step. */
   private halt(): void {
