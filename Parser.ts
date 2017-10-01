@@ -260,11 +260,6 @@ export class Parser {
     return { no, labels, code, args, comment }
   }
 
-  private getArgTail(argText: string): number {
-    const tail = Number(argText.replace(/^\W+/, ''))
-    log(`#getArgs> Tail=%d`, tail)
-    return tail
-  }
 
   /**
    * I extract operands from text like `0x40, 1`.
@@ -309,6 +304,14 @@ export class Parser {
         }
       })
       .filter(x => x)
+  }
+
+  /**
+   * Extract the actual value from arguments which use a prefix operator. For
+   * example, the actual value of `@1500` is 1500.
+   */
+  private getArgTail(argText: string): number {
+    return Number(argText.replace(/^\W+/, ''))
   }
 
   /**

@@ -1,10 +1,11 @@
 /**
  * This file defines classes created by the parser for representing the
- * arguments to operations that pertain to memory.
+ * arguments to operations.
  *
  * Types:
  * - Word
  * - Label
+ * - ArgType
  * 
  * Classes:
  * - Argument
@@ -21,13 +22,23 @@ import * as Debug from 'debug'
 const log = Debug('Mel:Argument')
 const io = Debug('Mel:I/O')
 
-/** A machine word holding data. */
+/**
+ * A machine word holding data.
+ */
 export type Word = number
 
-/** Refers to an instruction within the program. */
+/**
+ * Refers to an instruction within the program.
+ */
 export type Label = string
 
 /**
+ * The arguments to operations are either:
+ * 
+ * 1. compile-time constants directly in the source code,
+ * 2. the data that operations act on,
+ * 3. the blocks that organize operations.
+ * 
  * |  Type   |  Example  | Starts with |
  * | :-----: | :-------: | :---------- |
  * |  Block  |  `reset`  | Letter      |
@@ -46,9 +57,8 @@ export enum ArgType {
 
 /**
  * I am an abstract class representing an entity capable of being an argument
- * of an operation.
- *
- * Arguments wrap data and they read and write to it in different ways.
+ * of an operation. Arguments wrap data and they read and write to it in
+ * different ways.
  *  
  * API:
  * - Data
@@ -59,9 +69,6 @@ export enum ArgType {
 export class Argument {
   /** I am a wrapper around a single piece of data. */
   public readonly data: number
-
-  /** Memory is used for addresses/pointers but not for immediate values. */
-  protected memory: Word[]
 
   static ZERO = 0
 
@@ -87,6 +94,8 @@ export class Argument {
 /**
  * I am an operand whose data value is directly held. The data is a compile
  * time constant directly from the instructiosn in the code.
+ * 
+ * I disallow write operations.
  */
 export class Constant extends Argument {
   public get summary(): string {
@@ -112,12 +121,36 @@ export class InstructionAddress extends Constant {
  * I am an operand pointing to a memory address. Operations will read and write
  * to the value inside that address.
  */
-export class Variable extends Constant {
+export class Variable extends Argument {
+  /**
+   * Memory is used for addresses/pointers but not for immediate values.
+   */
+  protected memory: Word[]
+
+  /**
+   * Whether or not the memory backing this variable has been established.
+   */
   protected linked: boolean
 
   constructor(data: number) {
     super(data)
     this.linked = false
+  }
+
+  public read(): Word {
+    return this.memory[this.address] || Argument.ZERO
+  }
+
+  public write(value: Word): void {
+    this.memory[this.address] = value
+  }
+
+  /**
+   * Attach a data source where values can be read / written.
+   */
+  public link(source: Word[]): void {
+    this.memory = source
+    this.linked = true
   }
 
   public get address(): number {
@@ -126,21 +159,6 @@ export class Variable extends Constant {
 
   public get summary(): string {
     return `Address ${this.address} (value is ${this.read()})`
-  }
-
-  /** Attach a data source where values can be read / written. */
-  public link(source: Word[]): void {
-    this.memory = source
-    this.linked = true
-  }
-
-  public read(): Word {
-    //log(`[Variable] #read> Memory=%o Address=%o`, this.memory, this.address)
-    return this.memory[this.address] || Argument.ZERO
-  }
-
-  public write(value: Word): void {
-    this.memory[this.address] = value
   }
 }
 
@@ -193,12 +211,6 @@ export class Channel {
 export class PortAddress extends Variable {
   private channels: Channel[]
 
-  /** Attach a data source where values can be read / written. */
-  public attach(source: Channel[]): void {
-    this.channels = source
-    this.linked = true
-  }
-
   public read(): Word {
     const value = this.channels[this.address].pull()
     io('IN %O', value)
@@ -208,6 +220,12 @@ export class PortAddress extends Variable {
   public write(value: Word): void {
     io('OUT %O', value)
     this.channels[this.address].push(value)
+  }
+
+  /** Attach a data source where values can be read / written. */
+  public attach(source: Channel[]): void {
+    this.channels = source
+    this.linked = true
   }
 
   public get summary(): string {
