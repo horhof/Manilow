@@ -7,7 +7,7 @@ import * as Debug from 'debug'
 import { Word, Immediate, DataAddress, InstructionAddress, Pointer } from './Argument'
 import { Registers, Flags } from './Registers'
 import { Instruction, ArgType } from './Parser'
-import { Kernel, IsaEntry } from './Kernel'
+import { Kernel } from './Kernel'
 
 const info = Debug('Mel:Interpreter')
 const memoryDebug = Debug('Mel:Memory')
@@ -92,9 +92,7 @@ export class Interpreter {
 
     const { code, args, comment } = instruction
 
-    let op: IsaEntry | void
-
-    op = this.kernel.lookupOp(code)
+    const op = this.kernel.lookupOp(code)
 
     if (!op)
       throw new Error(`Operation "${code}" not found.`)

@@ -24,9 +24,8 @@ export type Word = number
 export type Label = string
 
 /**
- * An operand of an operation representing some component of the VM being
- * interacted with. This is an abstract class extended by the actual
- * arguments.
+ * I am an abstract class representing an entity capable of being an argument
+ * of an operation.
  *  
  * API:
  * - Data
