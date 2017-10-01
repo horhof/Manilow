@@ -12,52 +12,21 @@
 
 import * as Debug from 'debug'
 
-import { Word, Label } from './Argument'
+//import { Word, Label, Argument} from './Argument'
+import { Argument } from './Argument'
+import * as Args from './Argument'
 
 const log = Debug('Mel:Parser')
 
 /**
  * The parser produces instructions from source code.
  */
-export interface Instruction {
+export interface InstructionData {
   no: number
   labels: any[]
   code: string
-  args: Arg[]
+  args: Argument[]
   comment?: string
-}
-
-/**
- * These are the different types of data that can be given as arguments to
- * operations.
- */
-export enum ArgType {
-  // An immediate value. See class Immediate.
-  CONSTANT = 'ValueOf',
-  // An address of a piece of data. See class DataAddress.
-  DATA_ADDRESS = 'DataAt',
-  // An address of an instruction. See class InstructionAddress.
-  INSTRUCTION_ADDRESS = 'InstructionAt'
-}
-
-/**
- * A parsed argument.
- * 
- * Operands contain their type, their value (always converted to decimal),
- * and (if addresses) whether or not they're dereferenced addresses.
- * 
- * Examples:
- * 
- *     0d1400
- *     0x4A
- *     0o7
- *     14
- *     *4
- */
-export interface Arg {
-  type: ArgType
-  value: number | string
-  deref?: boolean
 }
 
 /**
@@ -67,7 +36,7 @@ export interface Arg {
  */
 interface LabeledSource {
   no: number
-  labels: Label[]
+  labels: Args.Label[]
   source: string
 }
 
@@ -123,13 +92,9 @@ export class Parser {
    */
   static COMMENT_PREFIX = `#`
 
-  /**
-   * ```asm
-   * add: *SP
-   * #    ^ Dereference addresses with an asterisk.
-   * ```
-   */
-  static DEREF_OPERATOR = `*`
+  static BLOCK_PATTERN = /^[a-z]/
+
+  static LITERAL_PATTERN = /^0[a-z]/
 
   /**
    * ```asm
@@ -137,7 +102,24 @@ export class Parser {
    * #     ^ Get the address of a variable with an ampersand.
    * ```
    */
-  static ADDR_OPERATOR = `&`
+  static ADDRESS_OPERATOR = `&`
+
+  /**
+   * ```asm
+   * add: @record
+   * #    ^ Access the value of a variable with an at symbol.
+   * ```
+   */
+  static MEMORY_OPERATOR = `@`
+
+  /**
+   * ```asm
+   * add: *stack
+   * #    ^ Dereference addresses with an asterisk.
+   * ```
+   */
+  static DEREF_OPERATOR = `*`
+
 
   /**
    * During the first pass, I keep track of the number of instructions so that
@@ -154,10 +136,10 @@ export class Parser {
   /**
    * I transform a string of source code into a list of instructions.
    */
-  public getProgram(source: string): Instruction[] {
+  public getProgram(source: string): InstructionData[] {
     const lines = source.split(Parser.INSTRUCTION_SUFFIX)
     const instructions = this.assignLabels(lines)
-    return <Instruction[]>instructions.map(this.getOp.bind(this))
+    return <InstructionData[]>instructions.map(this.getOp.bind(this))
   }
 
   /**
@@ -171,7 +153,7 @@ export class Parser {
     this.instructionCount = 1
     this.labelMap = {}
 
-    let labels: Label[] = []
+    let labels: Args.Label[] = []
 
     // The first pass places the labels directly on the LabelledOp objects.
     const instructions = <LabeledSource[]>lines
@@ -244,50 +226,59 @@ export class Parser {
   /**
    * I take the partially parsed instruction and return the final instruction.
    */
-  private getOp(labelledOp: LabeledSource): Instruction {
+  private getOp(labelledOp: LabeledSource): InstructionData {
     const { no, labels, source } = labelledOp
-    log(`#getOp> No=%o Labels=%o Source=%o`, no, labels, source)
+    //log(`#getOp> No=%o Labels=%o Source=%o`, no, labels, source)
 
     const [opText, comment] = source.split(Parser.COMMENT_PREFIX).map(x => x.trim())
-    log(`#getOp> OpText=%O Comment=%O`, opText, comment)
+    //log(`#getOp> OpText=%O Comment=%O`, opText, comment)
 
     const split = opText.split(Parser.OP_SUFFIX)
     const code = split[0]
-    log(`#getOp> Code=%O`, code)
+    //log(`#getOp> Code=%O`, code)
 
     const argText = opText.replace(`${code}${Parser.OP_SUFFIX}`, '').trim()
-    log(`#getOp> ArgText=%o`, argText)
+    //log(`#getOp> ArgText=%o`, argText)
 
     const hasArgs = code !== argText
-    log(`#getOp> HasArg=%o`, hasArgs)
+    //log(`#getOp> HasArg=%o`, hasArgs)
 
+    // TODO: string[]?
     let args: any[] = []
 
     if (hasArgs) {
       const textArgs = argText.split(Parser.ARG_SEP).filter(x => x)
-      log(`#getOp> TextArgs=%o`, textArgs)
+      //log(`#getOp> TextArgs=%o`, textArgs)
 
-      log(`#getOp> Code=%o ArgText=%o Comment=%o`, code, argText, comment)
+      //log(`#getOp> Code=%o ArgText=%o Comment=%o`, code, argText, comment)
 
       args = this.getArgs(textArgs)
-      log(`#getOp> Final args. Args=%o`, args)
+      //log(`#getOp> Final args. Args=%o`, args)
     }
 
     log(`#getOp> Code=%O Args=%o Comment=%O`, code, args, comment)
     return { no, labels, code, args, comment }
   }
 
+  private getArgTail(argText: string): number {
+    const tail = Number(argText.replace(/^\W+/, ''))
+    log(`#getArgs> Tail=%d`, tail)
+    return tail
+  }
+
   /**
    * I extract operands from text like `0x40, 1`.
    */
-  private getArgs(args: string[]): Arg[] {
+  private getArgs(args: string[]): Argument[] {
     log(`#getArgs> Args=%o`, args)
 
-    if (args.length < 1)
+    if (args.length < 1) {
+      log(`#getArgs> This has no arguments.`)
       return []
+    }
 
-    return <Arg[]>args
-      .map((argText: string): Arg | void => {
+    return <Argument[]>args
+      .map((argText: string): Argument | void => {
         argText = argText.trim()
 
         if (argText.length < 1) {
@@ -295,51 +286,110 @@ export class Parser {
           return
         }
 
-        const firstChar = argText[0]
+        log(`#getArgs> ArgText=%s`, argText)
 
-        // E.g. 0d1300 (decimal 1300), 0x4A00 (hex 4A00).
-        const immediate = /^0[a-z]/.test(argText)
-
-        // E.g. *17 (the value pointed to by address 17).
-        const deref = firstChar === Parser.DEREF_OPERATOR
-
-        // E.g. &record (the address of the label "record").
-        const addressOf = firstChar === Parser.ADDR_OPERATOR
-
-        // E.g. startLoop (the number of the op labelled startLoop)
-        const opAddr = /^[a-z]/.test(firstChar)
-
-        // E.g. 4800 (the value in address 4800).
-        const addr = !immediate && !deref
-
-        if (immediate)
-          return this.parseImmediate(argText)
-
-        if (opAddr) {
-          const value = this.labelMap[argText]
-          return {
-            type: ArgType.INSTRUCTION_ADDRESS,
-            value
-          }
+        switch (this.identifyArg(argText)) {
+          case Args.ArgType.BLOCK:
+            //log(`#getArgs> Block=%s`, argText)
+            return new Args.InstructionAddress(this.labelMap[argText])
+          case Args.ArgType.LITERAL:
+            //log(`#getArgs> Literal=%s`, argText)
+            return new Args.Constant(this.parseLiteral(argText))
+          case Args.ArgType.ADDRESS:
+            //log(`#getArgs> Address=%s`, argText)
+            return new Args.Constant(this.getArgTail(argText))
+          case Args.ArgType.MEMORY:
+            //log(`#getArgs> Memory=%s`, argText)
+            return new Args.Variable(this.getArgTail(argText))
+          case Args.ArgType.POINTER:
+            //log(`#getArgs> Pointer=%s`, argText)
+            return new Args.Pointer(this.getArgTail(argText))
+          //default:
+          //log(`Error: couldn't identify argument "%s".`, argText)
         }
 
-        const valueText = (deref)
-          ? argText.slice(1)
-          : argText
+        /*
+        const { block, literal, address, memory, pointer } = this.identifyArg(argText)
+        log(`#getArgs> Block=%o Literal=%o Address=%o Memory=%o Pointer=%o`, block, literal, address, memory, pointer)
 
-        return {
-          type: ArgType.DATA_ADDRESS,
-          value: Number(valueText),
-          deref
+        if (block)
+          return new Args.InstructionAddress(this.labelMap[argText])
+        else if (literal)
+          return new Args.Constant(this.parseLiteral(argText))
+        else {
+          const tail = Number(argText.replace(/^\W+/, ''))
+          log(`#getArgs> Tail=%d`, tail)
+
+          if (address)
+            return new Args.Constant(tail)
+          else if (memory)
+            return new Args.Variable(tail)
+          else if (pointer)
+            return new Args.Pointer(tail)
+          else
+            log(`Error: couldn't identify argument "%s".`, argText)
         }
+        */
       })
       .filter(x => x)
   }
 
   /**
-   * I parse a string like `0d10` or `0x4A` to an immediate argument.
+   * I return the type of argument represented by the given text.
    * 
-   * Supported formats:
+   * |  Type   |  Example  | Starts with |
+   * | :-----: | :-------: | :---------- |
+   * |  Block  |  `reset`  | Letter      |
+   * | Literal |  `0d13`   | 0 + letter  |
+   * | Address | `&record` | `&`         |
+   * | Memory  | `@record` | `@`         |
+   * | Pointer | `*record` | `*`         |
+   */
+  private identifyArg(argText: string): Args.ArgType {
+    const firstChar = argText[0]
+
+    if (Parser.BLOCK_PATTERN.test(argText))
+      return Args.ArgType.BLOCK
+    else if (Parser.LITERAL_PATTERN.test(argText))
+      return Args.ArgType.LITERAL
+    else if (firstChar === Parser.ADDRESS_OPERATOR)
+      return Args.ArgType.ADDRESS
+    else if (firstChar === Parser.MEMORY_OPERATOR)
+      return Args.ArgType.MEMORY
+    else if (firstChar === Parser.DEREF_OPERATOR)
+      return Args.ArgType.POINTER
+    else
+      throw new Error(`Error: unidentified argument "${argText}"`)
+  }
+
+  /**
+   * I return a boolean map of which kind of argument this represents.
+   * 
+  private identifyArg(argText: string) {
+    const firstChar = argText[0]
+
+    let block = false
+    let literal = false
+    let address = false
+    let memory = false
+    let pointer = false
+
+    if (/^[a-z]/.test(argText))
+      block = true
+    else if (/^0[a-z]/.test(argText))
+      literal = true
+    else if (firstChar === Parser.ADDRESS_OPERATOR)
+      address = true
+    else if (firstChar === Parser.MEMORY_OPERATOR)
+      memory = true
+    else if (firstChar === Parser.DEREF_OPERATOR)
+      pointer = true
+
+    return { block, literal, address, memory, pointer }
+  }
+
+  /**
+   * I parse a string like `0d10` or `0x4A` to a number.
    * 
    * | Code  |  Base   | Radix |
    * | :---: | ------- | :---: |
@@ -348,8 +398,9 @@ export class Parser {
    * |  `d`  | Decimal | 10    |
    * |  `x`  | Hex     | 16    |
    */
-  public parseImmediate(text: string): Arg {
+  public parseLiteral(text: string): number {
     const code = text[1]
+    const value = text.slice(2)
 
     const radixTable: { [index: string]: number } = {
       b: 2,
@@ -359,11 +410,7 @@ export class Parser {
     }
 
     const radix = radixTable[code]
-    //log(`#parseImm> Code=%O RadTab=%O Radix=%O`, code, radixTable, radix)
 
-    return {
-      type: ArgType.CONSTANT,
-      value: parseInt(text.slice(2), radix)
-    }
+    return parseInt(value, radix)
   }
 }

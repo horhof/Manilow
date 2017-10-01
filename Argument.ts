@@ -8,14 +8,18 @@
  * 
  * Classes:
  * - Argument
- * - Immediate
- * - DataAddress
+ * - Constant
  * - InstructionAddress
+ * - Variable
  * - Pointer
+ * - Channel
+ * - PortAddress
  */
+
 import * as Debug from 'debug'
 
-const log = Debug('Mel:Word')
+const log = Debug('Mel:Argument')
+const io = Debug('Mel:I/O')
 
 /** A machine word holding data. */
 export type Word = number
@@ -24,8 +28,27 @@ export type Word = number
 export type Label = string
 
 /**
+ * |  Type   |  Example  | Starts with |
+ * | :-----: | :-------: | :---------- |
+ * |  Block  |  `reset`  | Letter      |
+ * | Literal |  `0d13`   | 0 + letter  |
+ * | Address | `&record` | `&`         |
+ * | Memory  | `@record` | `@`         |
+ * | Pointer | `*record` | `*`         |
+ */
+export enum ArgType {
+  BLOCK,
+  LITERAL,
+  ADDRESS,
+  MEMORY,
+  POINTER
+}
+
+/**
  * I am an abstract class representing an entity capable of being an argument
  * of an operation.
+ *
+ * Arguments wrap data and they read and write to it in different ways.
  *  
  * API:
  * - Data
@@ -38,19 +61,12 @@ export class Argument {
   public readonly data: number
 
   /** Memory is used for addresses/pointers but not for immediate values. */
-  protected readonly memory: Word[]
+  protected memory: Word[]
 
   static ZERO = 0
 
-  constructor(data: number, memory?: Word[]) {
+  constructor(data: number) {
     this.data = data || Argument.ZERO
-    this.memory = memory || []
-  }
-
-  /** A human-readable representation of this argument. */
-  public get summary(): string {
-    // Overridden.
-    return ``
   }
 
   public read(): Word {
@@ -60,19 +76,35 @@ export class Argument {
   public write(value: Word): void {
     // Overridden.
   }
+
+  /** A human-readable representation of this argument. */
+  public get summary(): string {
+    // Overridden.
+    return ``
+  }
 }
 
 /**
  * I am an operand whose data value is directly held. The data is a compile
  * time constant directly from the instructiosn in the code.
  */
-export class Immediate extends Argument {
+export class Constant extends Argument {
   public get summary(): string {
-    return `Immediate ${this.data}`
+    return `Constant ${this.data}`
   }
 
   public write(value: Word): void {
-    throw new Error(`Error: immediate values are immutable.`)
+    throw new Error(`Error: constants are immutable.`)
+  }
+}
+
+/**
+ * I am an operand pointing to an instruction. Operations will use operands
+ * like these when doing jumps.
+ */
+export class InstructionAddress extends Constant {
+  public get summary(): string {
+    return `Instruction #${this.data}`
   }
 }
 
@@ -80,7 +112,14 @@ export class Immediate extends Argument {
  * I am an operand pointing to a memory address. Operations will read and write
  * to the value inside that address.
  */
-export class DataAddress extends Immediate {
+export class Variable extends Constant {
+  protected linked: boolean
+
+  constructor(data: number) {
+    super(data)
+    this.linked = false
+  }
+
   public get address(): number {
     return this.data
   }
@@ -89,7 +128,14 @@ export class DataAddress extends Immediate {
     return `Address ${this.address} (value is ${this.read()})`
   }
 
+  /** Attach a data source where values can be read / written. */
+  public link(source: Word[]): void {
+    this.memory = source
+    this.linked = true
+  }
+
   public read(): Word {
+    //log(`[Variable] #read> Memory=%o Address=%o`, this.memory, this.address)
     return this.memory[this.address] || Argument.ZERO
   }
 
@@ -99,26 +145,72 @@ export class DataAddress extends Immediate {
 }
 
 /**
- * I am an operand pointing to an instruction. Operations will use operands
- * like these when doing jumps.
- */
-export class InstructionAddress extends Immediate {
-  public get summary(): string {
-    return `Instruction #${this.data}`
-  }
-}
-
-/**
  * I am an operand pointing to a memory address but the value at that address
  * is not directly use. Instead operations will use the value as another
  * address and do a second memory access to get it.
  */
-export class Pointer extends DataAddress {
+export class Pointer extends Variable {
   public get address(): number {
     return this.memory[this.data]
   }
 
   public get summary(): string {
     return `Pointer ${this.data} (address is ${this.address}, value is ${this.read()})`
+  }
+}
+
+/**
+ * I represent a queue of words coming from and going to the outside of the
+ * program.
+ * 
+ * API:
+ * - push: word.
+ * - pull = word
+ */
+export class Channel {
+  public data: Word[]
+
+  constructor(data: Word[] = []) {
+    this.data = data
+  }
+
+  public push(value: Word): void {
+    this.data.push(value)
+  }
+
+  public pull(): Word {
+    const value = this.data.shift()
+    if (value == null)
+      throw new Error(`Input channel was empty at time of access.`)
+    return value
+  }
+}
+
+/**
+ * I am an address not for a memory location but an I/O channel. I read from
+ * and write to the channel's queue.
+ */
+export class PortAddress extends Variable {
+  private channels: Channel[]
+
+  /** Attach a data source where values can be read / written. */
+  public attach(source: Channel[]): void {
+    this.channels = source
+    this.linked = true
+  }
+
+  public read(): Word {
+    const value = this.channels[this.address].pull()
+    io('IN %O', value)
+    return value
+  }
+
+  public write(value: Word): void {
+    io('OUT %O', value)
+    this.channels[this.address].push(value)
+  }
+
+  public get summary(): string {
+    return `Port @${this.address} ( = ${this.read()})`
   }
 }

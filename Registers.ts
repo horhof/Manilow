@@ -7,9 +7,8 @@
 
 import * as Debug from 'debug'
 
-import { Word, DataAddress } from './Argument'
+import { Word, Variable, PortAddress, Channel, Argument } from './Argument'
 import { Interpreter } from './Interpreter'
-import { PortAddress, Channel } from './Io'
 
 const log = Debug('Mel:Registers')
 
@@ -17,7 +16,7 @@ export enum Flags {
   HALT
 }
 
-class Register extends DataAddress {
+class Register extends Variable {
 }
 
 class Port extends PortAddress {
@@ -32,26 +31,30 @@ class Port extends PortAddress {
  * - Unset: flag.
  * - Toggle: flag.
  */
-class FlagsRegister extends Register {
+class FlagsRegister extends Variable {
   static NUM_FLAGS = 1
 
   /** Return the given flag as a boolean. */
   public get(bit: number): boolean {
+    //log(`#get> Bit=%d`, bit)
     return Boolean(this.read() | bit)
   }
 
   public set(bit: number): void {
+    //log(`#set> Bit=%d`, bit)
     if (!this.get(bit))
       this.toggle(bit)
   }
 
   public unset(bit: number): void {
+    //log(`#unset> Bit=%d`, bit)
     if (this.get(bit))
       this.toggle(bit)
   }
 
   /** Flip the bit for the given flag. */
   public toggle(bitNo: number): void {
+    //log(`#toggle> BitNo=%d`, bitNo)
     const bit = 1 << bitNo
     const old = this.read()
     this.write(old ^ bit)
@@ -83,7 +86,7 @@ export class Registers {
   public output: Port
 
   /** Stack pointer. */
-  public stack: Register
+  //public stack: Register
 
   /** Instruction pointer. */
   public instr: Register
@@ -96,30 +99,26 @@ export class Registers {
     this.memory = memory
     this.io = io
 
-
     let address = 0
     this.accum = this.initRegister(address++)
     this.data = this.initRegister(address++)
-    this.stack = this.initRegister(address++)
+    //this.stack = this.initRegister(address++)
     this.instr = this.initRegister(address++)
     this.instr.write(Interpreter.STARTING_INSTRUCTION)
     this.flags = new FlagsRegister(address++)
-    // count
-    // dest
-    // src
-    // stack
-    // base
+    this.flags.link(this.memory)
 
     address = 0
     this.input = this.initPort(address++)
-
   }
 
   /**
    * The rest are initialized as data addresses tied to memory.
    */
   private initRegister(address: number): Register {
-    return new Register(address, this.memory)
+    const register = new Register(address)
+    register.link(this.memory)
+    return register
   }
 
   /**
@@ -127,6 +126,8 @@ export class Registers {
    * channels.
    */
   private initPort(address: number): Port {
-    return new Port(address, this.io)
+    const port = new Port(address)
+    port.attach(this.io)
+    return port
   }
 }

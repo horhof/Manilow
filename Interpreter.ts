@@ -4,9 +4,9 @@
 
 import * as Debug from 'debug'
 
-import { Word, Argument, Immediate, DataAddress, InstructionAddress, Pointer } from './Argument'
+import { Word, Argument, Constant, Variable, Pointer, InstructionAddress, PortAddress } from './Argument'
 import { Registers, Flags } from './Registers'
-import { Instruction, Arg, ArgType } from './Parser'
+import { InstructionData } from './Parser'
 import { Kernel } from './Kernel'
 
 const info = Debug('Mel:Interpreter')
@@ -34,7 +34,9 @@ export class Interpreter {
 
   private kernel: Kernel
 
-  private program: Instruction[]
+  private source: InstructionData[]
+
+  private program: Function[]
 
   /** During a program run, I keep track of the number of steps I've preformed. */
   private loopCounter: number
@@ -48,11 +50,11 @@ export class Interpreter {
   /**
    * I run the given program until completion.
    */
-  public run(program: Instruction[]): Promise<void> {
+  public run(program: InstructionData[]): Promise<void> {
     return new Promise((resolve, reject) => {
       info(`Running program of %d instructions...`, program.length)
 
-      this.program = program
+      this.source = program
       this.loopCounter = 0
 
       if (process.env['STEP']) {
@@ -68,7 +70,6 @@ export class Interpreter {
         })
       }
       else {
-        info(`Running program in automatic mode.`)
         while (!this.registers.flags.get(Flags.HALT)) {
           this.step()
         }
@@ -85,9 +86,9 @@ export class Interpreter {
    */
   public step(): void {
     const no = this.registers.instr.read()
-    const instruction = this.program.find(i => i.no === no)
-    debug(`#step> IP=%o Op=%o`, no, instruction)
-    info(`Running instruction %d/%d...`, no, this.program.length)
+    const instruction = this.source.find(i => i.no === no)
+    //debug(`#step> Raw instruction: IP=%o Op=%o`, no, instruction)
+    info(`Running instruction %d/%d...`, no, this.source.length)
 
     if (!instruction) {
       info(`Instruction ${no} not found.`)
@@ -103,16 +104,16 @@ export class Interpreter {
       return this.halt()
     }
 
-    debug(`#run> #%d "%s": %o`, no, code, args)
+    debug(`#step> #%d %s: %o`, no, code, args)
 
-    const boundArgs = this.bindArguments(args)
+    this.bindArguments(args)
 
-    if (boundArgs.length > 0)
-      info(`%s: %o`, code, boundArgs.map(a => a.summary))
+    if (args.length > 0)
+      info(`%s: %o`, code, args.map(a => a.summary))
     else
       info(`%s`, code)
 
-    op.fn(...boundArgs)
+    op.fn(...args)
     memoryDebug(`Input=%o`, this.registers.io[0].data)
     memoryDebug(`Output=%o`, this.registers.io[1].data)
     memoryDebug(`Memory=%o`, this.memory)
@@ -120,7 +121,7 @@ export class Interpreter {
     const newNo = no + 1
     this.registers.instr.write(newNo)
 
-    if (newNo > this.program.length) {
+    if (newNo > this.source.length) {
       info(`End of program. Terminated on op #%o.`, no)
       return this.halt()
     }
@@ -132,27 +133,38 @@ export class Interpreter {
     }
   }
 
+  private bindArguments(args: Argument[]): void {
+    args.forEach(arg => {
+      if (arg instanceof PortAddress)
+        arg.attach(this.registers.io)
+      else if (arg instanceof PortAddress)
+        arg.link(this.memory)
+    })
+  }
+
   /**
    * Turn the original objects representing arguments into real arguments bound
    * to memory and I/O.
-   */
+   *
   private bindArguments(args: Arg[]): Argument[] {
     return args.map((op: Arg): Argument => {
       const value = Number(op.value)
 
       if (op.type === ArgType.CONSTANT)
-        return new Immediate(value)
+        return new Constant(value)
 
       if (op.type === ArgType.INSTRUCTION_ADDRESS)
-        return new InstructionAddress(value, this.memory)
+        return new Block(value, this.memory)
 
       if (!op.deref)
-        return new DataAddress(value, this.memory)
+        return new Variable(value, this.memory)
 
       return new Pointer(value, this.memory)
     })
   }
+  */
 
+  /** Set the halt flag. The runtime halts on the next step. */
   private halt(): void {
     this.registers.flags.set(Flags.HALT)
   }

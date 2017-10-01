@@ -5,9 +5,8 @@
 import * as fs from 'fs'
 import * as Debug from 'debug'
 
-import { Parser, Instruction } from './Parser'
-import { Word } from './Argument'
-import { Channel } from './Io'
+import { Parser, InstructionData } from './Parser'
+import { Word, Channel } from './Argument'
 import { Kernel } from './Kernel'
 import { Registers } from './Registers'
 import { Interpreter } from './Interpreter'
@@ -60,7 +59,7 @@ export class Vm {
       })
   }
 
-  private loadProgram(filename: string): Instruction[] {
+  private loadProgram(filename: string): InstructionData[] {
     log(`Reading source code...`)
     const source = fs.readFileSync(filename, 'utf-8')
     return this.parser.getProgram(source)
