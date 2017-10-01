@@ -2,7 +2,7 @@
  * Defines the parser.
  * 
  * Types:
- * - Instruction
+ * - InstructionData
  * - ArgType
  * - Arg
  * 
@@ -12,18 +12,19 @@
 
 import * as Debug from 'debug'
 
-//import { Word, Label, Argument} from './Argument'
 import { Argument } from './Argument'
 import * as Args from './Argument'
 
 const log = Debug('Mel:Parser')
 
 /**
- * The parser produces instructions from source code.
+ * When the parser reads the source code, it produces an object containing the
+ * data for the instruction that it passes through to the runtime for actual
+ * interpretation.
  */
 export interface InstructionData {
   no: number
-  labels: any[]
+  labels: Args.Label[]
   code: string
   args: Argument[]
   comment?: string

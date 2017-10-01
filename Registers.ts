@@ -8,7 +8,7 @@
 import * as Debug from 'debug'
 
 import { Word, Variable, PortAddress, Channel, Argument } from './Argument'
-import { Interpreter } from './Interpreter'
+import { Runtime } from './Runtime'
 
 const log = Debug('Mel:Registers')
 
@@ -104,7 +104,7 @@ export class Registers {
     this.data = this.initRegister(address++)
     //this.stack = this.initRegister(address++)
     this.instr = this.initRegister(address++)
-    this.instr.write(Interpreter.STARTING_INSTRUCTION)
+    this.instr.write(Runtime.STARTING_INSTRUCTION)
     this.flags = new FlagsRegister(address++)
     this.flags.link(this.memory)
 

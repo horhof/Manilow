@@ -9,7 +9,7 @@ import { Parser, InstructionData } from './Parser'
 import { Word, Channel } from './Argument'
 import { Kernel } from './Kernel'
 import { Registers } from './Registers'
-import { Interpreter } from './Interpreter'
+import { Runtime } from './Runtime'
 
 const log = Debug('Mel:Vm')
 
@@ -28,7 +28,7 @@ export class Vm {
 
   private kernel: Kernel
 
-  private interpreter: Interpreter
+  private interpreter: Runtime
 
   private parser: Parser
 
@@ -87,7 +87,7 @@ export class Vm {
     this.kernel = new Kernel(this.registers)
 
     log(`Initializing interpreter...`)
-    this.interpreter = new Interpreter(this.registers, this.memory, this.kernel)
+    this.interpreter = new Runtime(this.registers, this.memory, this.kernel)
 
     log(`Initializing parser...`)
     this.parser = new Parser()
