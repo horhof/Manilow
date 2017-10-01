@@ -14,7 +14,9 @@ const memoryDebug = Debug('Mel:Memory')
 const debug = Debug('Mel:Interpreter:Debug')
 
 /**
- * Interpreter
+ * I am given a parsed program together with the memory / registers that store
+ * state and the kernel that performs the operations. I create the arguments,
+ * pass them to the kernel operations, and iterate through the program.
  * 
  * API:
  * - <Run>: program.
@@ -139,19 +141,4 @@ export class Interpreter {
       this.registers.flags.set(Flags.HALT)
     }
   }
-
-  private getInstructionLabels(instructions: Instruction[]): { [label: string]: number } {
-    const table: { [label: string]: number } = {}
-
-    instructions
-      .filter(instruction => instruction.labels.length > 0)
-      .forEach(instruction => {
-        instruction.labels.forEach((label, lineNo) => {
-          table[label] = instruction.no
-        })
-      })
-
-    return table
-  }
-
 }
