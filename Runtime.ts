@@ -4,7 +4,7 @@
 
 import * as Debug from 'debug'
 
-import { Word, Argument, Constant, Variable, Pointer, Block, PortAddress } from './Argument'
+import { Word, Argument, Constant, Variable, Pointer, Label, PortAddress } from './Argument'
 import { Registers, Flags } from './Registers'
 import { InstructionData } from './Parser'
 import { Kernel } from './Kernel'

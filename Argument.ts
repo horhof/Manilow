@@ -28,11 +28,6 @@ const io = Debug('Mel:I/O')
 export type Word = number
 
 /**
- * Refers to an instruction within the program.
- */
-export type Label = string
-
-/**
  * The arguments to operations are either:
  * 
  * 1. compile-time constants directly in the source code,
@@ -41,14 +36,14 @@ export type Label = string
  * 
  * |  Type   |  Class   |  Example  | Starts with |
  * | ------- | -------- | --------- | ----------- |
- * | Block   | Block    | `reset`   | Letter      |
+ * | Label   | Label    | `reset`   | Letter      |
  * | Literal | Constant | `0d13`    | 0 + letter  |
  * | Address | Constant | `&record` | `&`         |
  * | Memory  | Variable | `@record` | `@`         |
  * | Pointer | Pointer  | `*record` | `*`         |
  */
 export enum ArgType {
-  BLOCK,
+  LABEL,
   LITERAL,
   ADDRESS,
   MEMORY,
@@ -113,9 +108,9 @@ export class Constant extends Argument {
  * I am an operand pointing to an instruction. Operations will use operands
  * like these when doing jumps.
  */
-export class Block extends Constant {
+export class Label extends Constant {
   public get summary(): string {
-    return `Block #${this.data}`
+    return `Label ${this.data}`
   }
 }
 

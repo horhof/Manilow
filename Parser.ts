@@ -24,7 +24,7 @@ const log = Debug('Mel:Parser')
  */
 export interface InstructionData {
   no: number
-  labels: Args.Label[]
+  labels: string[]
   code: string
   args: Argument[]
   comment?: string
@@ -37,7 +37,7 @@ export interface InstructionData {
  */
 interface LabeledSource {
   no: number
-  labels: Args.Label[]
+  labels: string[]
   source: string
 }
 
@@ -132,7 +132,7 @@ export class Parser {
    * During the first pass, I build up a map of all labels with the number of
    * the instruction that they point to.
    */
-  private blocks: { [label: string]: number }
+  private labels: { [label: string]: number }
 
   /**
    * I transform a string of source code into a list of instructions.
@@ -152,9 +152,9 @@ export class Parser {
    */
   private assignLabels(lines: string[]): LabeledSource[] {
     this.instructionCount = 1
-    this.blocks = {}
+    this.labels = {}
 
-    let labels: Args.Label[] = []
+    let labels: string[] = []
 
     // The first pass places the labels directly on the LabelledOp objects.
     const instructions = <LabeledSource[]>lines
@@ -179,7 +179,7 @@ export class Parser {
     instructions.forEach(instruction => {
       if (instruction.labels.length > 0) {
         instruction.labels.forEach(label => {
-          this.blocks[label] = instruction.no
+          this.labels[label] = instruction.no
           log(`Assigning label "%s" the value of instruction #%d.`, label, instruction.no)
         })
       }
@@ -285,9 +285,9 @@ export class Parser {
         log(`#getArgs> ArgText=%s`, argText)
 
         switch (this.identifyArg(argText)) {
-          case Args.ArgType.BLOCK:
+          case Args.ArgType.LABEL:
             //log(`#getArgs> Block=%s`, argText)
-            return new Args.Block(this.blocks[argText])
+            return new Args.Label(this.labels[argText])
           case Args.ArgType.LITERAL:
             //log(`#getArgs> Literal=%s`, argText)
             return new Args.Constant(this.parseLiteral(argText))
@@ -322,7 +322,7 @@ export class Parser {
     const firstChar = argText[0]
 
     if (Parser.BLOCK_PATTERN.test(argText))
-      return Args.ArgType.BLOCK
+      return Args.ArgType.LABEL
     else if (Parser.LITERAL_PATTERN.test(argText))
       return Args.ArgType.LITERAL
     else if (firstChar === Parser.ADDRESS_OPERATOR)
