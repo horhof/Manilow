@@ -24,7 +24,7 @@ const log = Debug('Mel:Parser')
  */
 export interface InstructionData {
   no: number
-  labels: string[]
+  blocks: string[]
   code: string
   args: Argument[]
   comment?: string
@@ -37,7 +37,7 @@ export interface InstructionData {
  */
 interface LabeledSource {
   no: number
-  labels: string[]
+  blocks: string[]
   source: string
 }
 
@@ -67,7 +67,7 @@ export class Parser {
    * #            ^ Colon terminates a label.
    * ```
    */
-  static LABEL_SUFFIX = `:`
+  static BLOCK_SUFFIX = `:`
 
   /**
    * ```asm
@@ -87,8 +87,8 @@ export class Parser {
 
   /**
    * ```asm
-   * hcf  # End program.
-   * #    ^ Introduce comments with a pound sign.
+   * halt  # End program.
+   * #     ^ Introduce comments with a pound sign.
    * ```
    */
   static COMMENT_PREFIX = `#`
@@ -132,14 +132,14 @@ export class Parser {
    * During the first pass, I build up a map of all labels with the number of
    * the instruction that they point to.
    */
-  private labels: { [label: string]: number }
+  private blocks: { [label: string]: number }
 
   /**
    * I transform a string of source code into a list of instructions.
    */
   public getProgram(source: string): InstructionData[] {
     const lines = source.split(Parser.INSTRUCTION_SUFFIX)
-    const instructions = this.assignLabels(lines)
+    const instructions = this.assignBlocks(lines)
     return <InstructionData[]>instructions.map(this.getOp.bind(this))
   }
 
@@ -150,24 +150,24 @@ export class Parser {
    * I'm incrementing instructionCount and collecting labels. Then I modify the
    * instructions themselves to assign the labels that pertain to them.
    */
-  private assignLabels(lines: string[]): LabeledSource[] {
+  private assignBlocks(lines: string[]): LabeledSource[] {
     this.instructionCount = 1
-    this.labels = {}
+    this.blocks = {}
 
-    let labels: string[] = []
+    let blocks: string[] = []
 
     // The first pass places the labels directly on the LabelledOp objects.
     const instructions = <LabeledSource[]>lines
       .map((line: string): LabeledSource | void => {
         const no = this.instructionCount
-        const { label, source } = this.parseLine(line)
+        const { block, source } = this.parseLine(line)
 
-        if (label) {
-          labels.push(label)
+        if (block) {
+          blocks.push(block)
         }
         else if (source) {
-          const firstPass = { no, labels, source }
-          labels = []
+          const firstPass = { no, blocks, source }
+          blocks = []
           this.instructionCount++
           return firstPass
         }
@@ -177,9 +177,9 @@ export class Parser {
     // The second pass collects the labels into a map where the text of the label
     // maps to the number of the instruction.
     instructions.forEach(instruction => {
-      if (instruction.labels.length > 0) {
-        instruction.labels.forEach(label => {
-          this.labels[label] = instruction.no
+      if (instruction.blocks.length > 0) {
+        instruction.blocks.forEach(label => {
+          this.blocks[label] = instruction.no
           log(`Assigning label "%s" the value of instruction #%d.`, label, instruction.no)
         })
       }
@@ -198,37 +198,37 @@ export class Parser {
    *     { label: "startLoop" }    // Label "startLoop".
    *     { }                       // Comment/blank line.
    */
-  private parseLine(line: string): { label?: string, source?: string } {
+  private parseLine(line: string): { block?: string, source?: string } {
     line = line.trim()
 
-    let label: string | undefined
+    let block: string | undefined
     let source: string | undefined
 
     if (line.length < 1)
-      return { label, source }
+      return { block, source }
 
     const firstChar = line[0]
     const isComment = firstChar === Parser.COMMENT_PREFIX
 
     if (isComment)
-      return { label, source }
+      return { block, source }
 
     const lastChar = line.slice(-1)
-    const isLabel = lastChar === Parser.LABEL_SUFFIX
+    const isLabel = lastChar === Parser.BLOCK_SUFFIX
 
     if (isLabel)
-      label = line.slice(0, -1)
+      block = line.slice(0, -1)
     else
       source = line
 
-    return { label, source }
+    return { block, source }
   }
 
   /**
    * I take the partially parsed instruction and return the final instruction.
    */
   private getOp(labelledOp: LabeledSource): InstructionData {
-    const { no, labels, source } = labelledOp
+    const { no, blocks, source } = labelledOp
     //log(`#getOp> No=%o Labels=%o Source=%o`, no, labels, source)
 
     const [opText, comment] = source.split(Parser.COMMENT_PREFIX).map(x => x.trim())
@@ -258,7 +258,7 @@ export class Parser {
     }
 
     log(`#getOp> Code=%O Args=%o Comment=%O`, code, args, comment)
-    return { no, labels, code, args, comment }
+    return { no, blocks, code, args, comment }
   }
 
 
@@ -285,16 +285,16 @@ export class Parser {
         log(`#getArgs> ArgText=%s`, argText)
 
         switch (this.identifyArg(argText)) {
-          case Args.ArgType.LABEL:
+          case Args.ArgType.BLOCK:
             //log(`#getArgs> Block=%s`, argText)
-            return new Args.Label(this.labels[argText])
+            return new Args.Block(this.blocks[argText])
           case Args.ArgType.LITERAL:
             //log(`#getArgs> Literal=%s`, argText)
-            return new Args.Constant(this.parseLiteral(argText))
+            return new Args.Literal(this.parseLiteral(argText))
           case Args.ArgType.ADDRESS:
             //log(`#getArgs> Address=%s`, argText)
-            return new Args.Constant(this.getArgTail(argText))
-          case Args.ArgType.MEMORY:
+            return new Args.Literal(this.getArgTail(argText))
+          case Args.ArgType.VARIABLE:
             //log(`#getArgs> Memory=%s`, argText)
             return new Args.Variable(this.getArgTail(argText))
           case Args.ArgType.POINTER:
@@ -322,13 +322,13 @@ export class Parser {
     const firstChar = argText[0]
 
     if (Parser.BLOCK_PATTERN.test(argText))
-      return Args.ArgType.LABEL
+      return Args.ArgType.BLOCK
     else if (Parser.LITERAL_PATTERN.test(argText))
       return Args.ArgType.LITERAL
     else if (firstChar === Parser.ADDRESS_OPERATOR)
       return Args.ArgType.ADDRESS
     else if (firstChar === Parser.MEMORY_OPERATOR)
-      return Args.ArgType.MEMORY
+      return Args.ArgType.VARIABLE
     else if (firstChar === Parser.DEREF_OPERATOR)
       return Args.ArgType.POINTER
     else

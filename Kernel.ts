@@ -10,7 +10,7 @@
 
 import * as Debug from 'debug'
 
-import { Word, Argument, Constant, Variable, Label } from './Argument'
+import { Word, Argument, Literal, Variable, Block } from './Argument'
 import { Registers, Flags } from './Registers'
 
 const log = Debug('Mel:Kernel')
@@ -106,7 +106,7 @@ export class Kernel {
    * @param src Source value or address. Defaults to data.
    * @param dest Destination address. Defaults to accum.
    */
-  private copy(src: Constant | Variable = this.registers.data, dest: Variable = this.registers.accum): void {
+  private copy(src: Literal | Variable = this.registers.data, dest: Variable = this.registers.accum): void {
     dest.write(src.read())
   }
 
@@ -116,7 +116,7 @@ export class Kernel {
    * @param dest Destination address. Defaults to accum.
    */
   private zero(dest: Variable = this.registers.accum): void {
-    this.copy(new Constant(0), dest)
+    this.copy(new Literal(0), dest)
   }
 
   /**
@@ -155,7 +155,7 @@ export class Kernel {
    * immediate value.
    */
   private applySrcToDest(fn: BinaryTransform) {
-    return (src: Constant = this.registers.data, dest: Constant = this.registers.accum): void => {
+    return (src: Literal = this.registers.data, dest: Literal = this.registers.accum): void => {
       const result = fn(dest.read(), src.read())
       dest.write(result)
     }
@@ -178,7 +178,7 @@ export class Kernel {
   /**
    * Change instruction pointer to point to dest.
    */
-  private jump(dest: Constant): void {
+  private jump(dest: Literal): void {
     const addr = dest.read()
     const ip = this.registers.instr
     log(`#jump> Addr=%o IP=%d`, addr, ip.read())
@@ -195,7 +195,7 @@ export class Kernel {
      * @param dest The op address being jumped to.
      * @param src The thing being examined. Defaults to accum.
      */
-    return (dest: Label, src: Variable = this.registers.accum) => {
+    return (dest: Block, src: Variable = this.registers.accum) => {
       log(`Examining source address %o (value is %o) to see if I should jump to dest %o...`, src.address, src.read(), dest.read());
       if (!predicate(src.read())) {
         log(`Predicate was false. No jump.`)

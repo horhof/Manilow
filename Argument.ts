@@ -34,19 +34,19 @@ export type Word = number
  * 2. the data that operations act on,
  * 3. the blocks that organize operations.
  * 
- * |  Type   |  Class   |  Example  | Starts with |
- * | ------- | -------- | --------- | ----------- |
- * | Label   | Label    | `reset`   | Letter      |
- * | Literal | Constant | `0d13`    | 0 + letter  |
- * | Address | Constant | `&record` | `&`         |
- * | Memory  | Variable | `@record` | `@`         |
- * | Pointer | Pointer  | `*record` | `*`         |
+ * |  Type    |  Class   |  Example  | Starts with |
+ * | -------- | -------- | --------- | ----------- |
+ * | Block    | Block    | `reset`   | Letter      |
+ * | Literal  | Literal  | `0d13`    | 0 + letter  |
+ * | Address  | Literal  | `&record` | `&`         |
+ * | Variable | Variable | `@record` | `@`         |
+ * | Pointer  | Pointer  | `*record` | `*`         |
  */
 export enum ArgType {
-  LABEL,
+  BLOCK,
   LITERAL,
   ADDRESS,
-  MEMORY,
+  VARIABLE,
   POINTER
 }
 
@@ -94,13 +94,13 @@ export class Argument {
  * 
  * I disallow write operations.
  */
-export class Constant extends Argument {
+export class Literal extends Argument {
   public get summary(): string {
-    return `Constant ${this.data}`
+    return `Literal ${this.data}`
   }
 
   public write(value: Word): void {
-    throw new Error(`Error: constants are immutable.`)
+    throw new Error(`Error: literal values are immutable.`)
   }
 }
 
@@ -108,9 +108,15 @@ export class Constant extends Argument {
  * I am an operand pointing to an instruction. Operations will use operands
  * like these when doing jumps.
  */
-export class Label extends Constant {
+export class Block extends Literal {
   public get summary(): string {
-    return `Label ${this.data}`
+    return `Block ${this.data}`
+  }
+}
+
+export class Address extends Literal {
+  public get summary(): string {
+    return `Address ${this.data}`
   }
 }
 
