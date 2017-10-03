@@ -229,38 +229,25 @@ export class Parser {
    */
   private getOp(labelledOp: LabeledSource): InstructionData {
     const { no, blocks, source } = labelledOp
-    //log(`#getOp> No=%o Labels=%o Source=%o`, no, labels, source)
 
     const [opText, comment] = source.split(Parser.COMMENT_PREFIX).map(x => x.trim())
-    //log(`#getOp> OpText=%O Comment=%O`, opText, comment)
 
     const split = opText.split(Parser.OP_SUFFIX)
     const code = split[0]
-    //log(`#getOp> Code=%O`, code)
-
     const argText = opText.replace(`${code}${Parser.OP_SUFFIX}`, '').trim()
-    //log(`#getOp> ArgText=%o`, argText)
-
-    const hasArgs = code !== argText
-    //log(`#getOp> HasArg=%o`, hasArgs)
 
     // TODO: string[]?
     let args: any[] = []
+    const hasArgs = code !== argText
 
     if (hasArgs) {
       const textArgs = argText.split(Parser.ARG_SEP).filter(x => x)
-      //log(`#getOp> TextArgs=%o`, textArgs)
-
-      //log(`#getOp> Code=%o ArgText=%o Comment=%o`, code, argText, comment)
-
       args = this.getArgs(textArgs)
-      //log(`#getOp> Final args. Args=%o`, args)
     }
 
     log(`#getOp> Code=%O Args=%o Comment=%O`, code, args, comment)
     return { no, blocks, code, args, comment }
   }
-
 
   /**
    * I extract operands from text like `0x40, 1`.
@@ -277,32 +264,8 @@ export class Parser {
       .map((argText: string): Argument | void => {
         argText = argText.trim()
 
-        if (argText.length < 1) {
-          log(`Empty argText`)
-          return
-        }
-
-        log(`#getArgs> ArgText=%s`, argText)
-
-        switch (this.identifyArg(argText)) {
-          case Args.ArgType.BLOCK:
-            //log(`#getArgs> Block=%s`, argText)
-            return new Args.Block(this.blocks[argText])
-          case Args.ArgType.LITERAL:
-            //log(`#getArgs> Literal=%s`, argText)
-            return new Args.Literal(this.parseLiteral(argText))
-          case Args.ArgType.ADDRESS:
-            //log(`#getArgs> Address=%s`, argText)
-            return new Args.Literal(this.getArgTail(argText))
-          case Args.ArgType.VARIABLE:
-            //log(`#getArgs> Memory=%s`, argText)
-            return new Args.Variable(this.getArgTail(argText))
-          case Args.ArgType.POINTER:
-            //log(`#getArgs> Pointer=%s`, argText)
-            return new Args.Pointer(this.getArgTail(argText))
-          //default:
-          //log(`Error: couldn't identify argument "%s".`, argText)
-        }
+        if (argText.length > 0)
+          return this.instantiateArg(argText)
       })
       .filter(x => x)
   }
@@ -318,21 +281,25 @@ export class Parser {
   /**
    * I return the type of argument represented by the given text.
    */
-  private identifyArg(argText: string): Args.ArgType {
+  private instantiateArg(argText: string): Argument {
     const firstChar = argText[0]
 
     if (Parser.BLOCK_PATTERN.test(argText))
-      return Args.ArgType.BLOCK
-    else if (Parser.LITERAL_PATTERN.test(argText))
-      return Args.ArgType.LITERAL
-    else if (firstChar === Parser.ADDRESS_OPERATOR)
-      return Args.ArgType.ADDRESS
-    else if (firstChar === Parser.MEMORY_OPERATOR)
-      return Args.ArgType.VARIABLE
-    else if (firstChar === Parser.DEREF_OPERATOR)
-      return Args.ArgType.POINTER
-    else
-      throw new Error(`Error: unidentified argument "${argText}"`)
+      return new Args.Block(this.blocks[argText])
+
+    if (Parser.LITERAL_PATTERN.test(argText))
+      return new Args.Literal(this.parseLiteral(argText))
+
+    if (firstChar === Parser.ADDRESS_OPERATOR)
+      return new Args.Literal(this.getArgTail(argText))
+
+    if (firstChar === Parser.MEMORY_OPERATOR)
+      return new Args.Variable(this.getArgTail(argText))
+
+    if (firstChar === Parser.DEREF_OPERATOR)
+      return new Args.Pointer(this.getArgTail(argText))
+
+    throw new Error(`Error: unidentified argument "${argText}"`)
   }
 
   /**
