@@ -26,7 +26,7 @@ interface InstructionSource {
 }
 
 interface ArgumentSource {
-  type: ArgType
+  type: Argument
   content: string | number
 }
 
@@ -45,7 +45,7 @@ interface ArgumentSource {
  * | Variable | Variable | `@record` | `@`         |
  * | Pointer  | Pointer  | `*record` | `*`         |
  */
-export enum ArgType {
+enum Argument {
   BLOCK,
   LITERAL,
   ADDRESS,
@@ -133,7 +133,6 @@ export class Parser {
    */
   static POINTER_SIGIL = `*`
 
-
   private instructionCount: number
 
   private blocks: { [label: string]: number }
@@ -145,13 +144,12 @@ export class Parser {
   ]
 
   public getProgram(source: string) {
-    debug(`#getProgram>`)
-
+    //debug(`#getProgram>`)
     this.instructionCount = 1
     this.blocks = {}
     this.variables = {}
 
-    debug(`#getProgram> Source=%o`, source)
+    //debug(`#getProgram> Source=%o`, source)
     const lines = <SourceLine[]>source
       .split(Parser.INSTRUCTION_SUFFIX)
       .map(this.parseLine.bind(this))
@@ -169,14 +167,14 @@ export class Parser {
 
   private parseLine(line: string): SourceLine {
     line = line.trim()
-    debug(`parseLine> Line=%s`, line)
+    //debug(`parseLine> Line=%s`, line)
 
     let block: BlockSource | undefined
     let instruction: InstructionSource | undefined
     let comment: string | undefined
 
     if (line.length < 1) {
-      debug(`parseLine> Line %d is an empty line.`, this.instructionCount)
+      //debug(`parseLine> Line %d is an empty line.`, this.instructionCount)
       return { block, instruction, comment }
     }
 
@@ -184,7 +182,7 @@ export class Parser {
     const isComment = firstChar === Parser.COMMENT_PREFIX
 
     if (isComment) {
-      debug(`parseLine> Line %d is a comment.`, this.instructionCount)
+      //debug(`parseLine> Line %d is a comment.`, this.instructionCount)
       comment = line
       return { block, instruction, comment }
     }
@@ -194,10 +192,10 @@ export class Parser {
 
     if (isBlock) {
       block = { label: line.slice(0, -1) }
-      debug(`parseLine> Line %d is the block "%o".`, this.instructionCount, block)
+      //debug(`parseLine> Line %d is the block "%o".`, this.instructionCount, block)
     }
     else {
-      debug(`parseLine> Line %d is an instruction.`, this.instructionCount)
+      //debug(`parseLine> Line %d is an instruction.`, this.instructionCount)
       instruction = this.parseInstructionSource(line)
     }
 
@@ -206,7 +204,7 @@ export class Parser {
 
   private parseInstructionSource(line: string): InstructionSource {
     const hasArguments = Boolean(line.match(Parser.OP_SUFFIX))
-    debug(`parseInstructionSource> Source="%s" HasArgs=%o`, line, hasArguments)
+    //debug(`parseInstructionSource> Source="%s" HasArgs=%o`, line, hasArguments)
 
     if (!hasArguments)
       return { operation: line, arguments: [] }
@@ -228,28 +226,28 @@ export class Parser {
     const firstChar = argText[0]
 
     if (Parser.BLOCK_PATTERN.test(argText)) {
-      debug(`parseArgSrc> "%s" is a block label.`, argText)
-      return { type: ArgType.BLOCK, content: argText }
+      //debug(`parseArgSrc> "%s" is a block label.`, argText)
+      return { type: Argument.BLOCK, content: argText }
     }
 
     if (Parser.LITERAL_PATTERN.test(argText)) {
       const content = this.parseLiteral(argText)
-      debug(`parseArgSrc> "%s" is a literal. (%d)`, argText, content)
-      return { type: ArgType.LITERAL, content }
+      //debug(`parseArgSrc> "%s" is a literal. (%d)`, argText, content)
+      return { type: Argument.LITERAL, content }
     }
 
     const sigil = firstChar
     const content = argText.replace(/^\W+/, '')
-    debug(`instantiateArg> "%s" is a data label with a %s sigil. ArgText=%s`, content, sigil, argText)
+    //debug(`instantiateArg> "%s" is a data label with a %s sigil. ArgText=%s`, content, sigil, argText)
 
     if (sigil === Parser.ADDRESS_SIGIL)
-      return { type: ArgType.ADDRESS, content }
+      return { type: Argument.ADDRESS, content }
 
     if (sigil === Parser.VARIABLE_SIGIL)
-      return { type: ArgType.VARIABLE, content }
+      return { type: Argument.VARIABLE, content }
 
     if (sigil === Parser.POINTER_SIGIL)
-      return { type: ArgType.POINTER, content }
+      return { type: Argument.POINTER, content }
 
     throw new Error(`Error: unable to identify argument "${argText}".`)
   }
