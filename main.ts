@@ -9,7 +9,7 @@ process.env['DEBUG'] = process.env['DEBUG'] || [
   'Mel:Vm',
   'Mel:Kernel',
   'Mel:Registers',
-  'Mel:Parser',
+  'Mel:Parser:*',
   'Mel:Memory',
   'Mel:Runtime',
   'Mel:Runtime:Debug',

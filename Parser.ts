@@ -15,7 +15,8 @@ import * as Debug from 'debug'
 import { Argument } from './Argument'
 import * as Args from './Argument'
 
-const log = Debug('Mel:Parser')
+const info = Debug('Mel:Parser:Info')
+const debug = Debug('Mel:Parser:Debug')
 
 /**
  * When the parser reads the source code, it produces an object containing the
