@@ -1,52 +1,56 @@
 /**
  * Defines the parser.
  * 
- * Types:
- * - InstructionData
- * - ArgType
- * - Arg
- * 
  * Classes:
  * - Parser
  */
 
 import * as Debug from 'debug'
 
-import { Argument } from './Argument'
-import * as Args from './Argument'
-
 const info = Debug('Mel:Parser:Info')
 const debug = Debug('Mel:Parser:Debug')
 
-/**
- * When the parser reads the source code, it produces an object containing the
- * data for the instruction that it passes through to the runtime for actual
- * interpretation.
- */
-export interface InstructionData {
-  no: number
-  blocks: string[]
-  code: string
-  args: Argument[]
+interface SourceLine {
+  block?: BlockSource
+  instruction?: InstructionSource
   comment?: string
 }
 
-/**
- * The first pass at parsing an instruction has the labels collected and
- * assigned to their target instruction. The text of the operation has to be
- * further parsed in order to make an Instruction object.
- */
-interface FirstPass {
-  blocks: string[]
-  source: string
+interface BlockSource {
+  label: string
 }
 
-/** Second pass has everything but the instantiated arguments. */
-interface SecondPass {
-  blocks: string[]
-  code: string
-  args: string[]
-  comment?: string
+interface InstructionSource {
+  operation: string
+  arguments: ArgumentSource[]
+}
+
+interface ArgumentSource {
+  type: ArgType
+  content: string | number
+}
+
+/**
+ * The arguments to operations are either:
+ * 
+ * 1. compile-time constants directly in the source code,
+ * 2. the data that operations act on,
+ * 3. the blocks that organize operations.
+ * 
+ * |  Type    |  Class   |  Example  | Starts with |
+ * | -------- | -------- | --------- | ----------- |
+ * | Block    | Block    | `reset`   | Letter      |
+ * | Literal  | Literal  | `0d13`    | 0 + letter  |
+ * | Address  | Literal  | `&record` | `&`         |
+ * | Variable | Variable | `@record` | `@`         |
+ * | Pointer  | Pointer  | `*record` | `*`         |
+ */
+export enum ArgType {
+  BLOCK,
+  LITERAL,
+  ADDRESS,
+  VARIABLE,
+  POINTER
 }
 
 /**
@@ -111,7 +115,7 @@ export class Parser {
    * #     ^ Get the address of a variable with an ampersand.
    * ```
    */
-  static ADDRESS_OPERATOR = `&`
+  static ADDRESS_SIGIL = `&`
 
   /**
    * ```asm
@@ -119,7 +123,7 @@ export class Parser {
    * #    ^ Access the value of a variable with an at symbol.
    * ```
    */
-  static MEMORY_OPERATOR = `@`
+  static VARIABLE_SIGIL = `@`
 
   /**
    * ```asm
@@ -127,19 +131,11 @@ export class Parser {
    * #    ^ Dereference addresses with an asterisk.
    * ```
    */
-  static DEREF_OPERATOR = `*`
+  static POINTER_SIGIL = `*`
 
 
-  /**
-   * During the first pass, I keep track of the number of instructions so that
-   * labels can be assigned to a given instruction number.
-   */
   private instructionCount: number
 
-  /**
-   * During the first pass, I build up a map of all labels with the number of
-   * the instruction that they point to.
-   */
   private blocks: { [label: string]: number }
 
   private variables: { [label: string]: number }
@@ -148,209 +144,114 @@ export class Parser {
     { code: 'define', fn: this.define.bind(this) },
   ]
 
-  /**
-   * I transform a string of source code into a list of instructions.
-   */
-  public getProgram(source: string): InstructionData[] {
+  public getProgram(source: string) {
     debug(`#getProgram>`)
 
     this.instructionCount = 1
     this.blocks = {}
     this.variables = {}
 
-    const lines = source.split(Parser.INSTRUCTION_SUFFIX)
-    const firstPass = this.resolveBlocks(lines)
-    const secondPass = this.parseInstructions(firstPass)
+    debug(`#getProgram> Source=%o`, source)
+    const lines = <SourceLine[]>source
+      .split(Parser.INSTRUCTION_SUFFIX)
+      .map(this.parseLine.bind(this))
 
-    this.runDirectives(secondPass)
-    this.assignBlocks(secondPass)
-
-    const instructions = this.createInstructions(secondPass)
-
-    return instructions
-  }
-
-  /**
-   * I run through the lines of source code and resolve the assignment of
-   * labels. The text of the operations is unparsed at this stage.
-   * 
-   * I'm incrementing instructionCount and collecting labels. Then I modify the
-   * instructions themselves to assign the labels that pertain to them.
-   */
-  private resolveBlocks(lines: string[]): FirstPass[] {
-    debug(`resolveBlocks> Received %d lines.`, lines.length)
-
-    let blocks: string[] = []
-
-    // The first pass places the labels directly on the FirstPass objects.
-    const instructions = <FirstPass[]>lines
-      .map((line): FirstPass | void => {
-        const { block, source } = this.parseLine(line)
-
-        if (block) {
-          info(`resolveBlocks> Found block "%s". Pushing to block table...`, block)
-          blocks.push(block)
-        }
-        else if (source) {
-          const firstPass = { blocks, source }
-          blocks = []
-          this.instructionCount++
-          return firstPass
-        }
-      })
-      .filter(x => x)
-
-
-    debug(`resolveBlocks> Returning %d first pass instructions...`, instructions.length)
-    return instructions
-  }
-
-  private parseInstructions(lines: FirstPass[]): SecondPass[] {
-    debug(`resolveVariables> Received %d lines.`, lines.length)
-
-    const instructions = lines.map((line): SecondPass => {
-      const { blocks, source } = line
-
-      const [opText, comment] = source.split(Parser.COMMENT_PREFIX).map(x => x.trim())
-
-      const split = opText.split(Parser.OP_SUFFIX)
-      const code = split[0]
-      const argText = opText.replace(`${code}${Parser.OP_SUFFIX}`, '').trim()
-      const args = argText.split(Parser.ARG_SEP).filter(x => x)
-
-      debug(`resolveVariables> Code=%O Args=%o Comment=%O`, code, args, comment)
-      return { blocks, code, args, comment }
+    debug(`#getProgram> Lines=...`)
+    lines.forEach(l => {
+      const operation = l.instruction && l.instruction.operation
+      const args = l.instruction && l.instruction.arguments
+      debug(`Block=%o Op=%o Args=%o Comment=%o`, l.block, operation, args, l.comment)
     })
 
-    debug(`resolveVariables> Returning %d second pass instructions...`, instructions.length)
-    return instructions
+    process.exit(1)
+    return []
   }
 
-  private assignBlocks(lines: SecondPass[]): void {
-    lines.forEach(line => {
-      if (line.blocks.length > 0) {
-        line.blocks.forEach((label, index) => {
-          this.blocks[label] = index + 1
-          info(`Assigning label "%s" the value of instruction #%d.`, label, index + 1)
-        })
-      }
-    })
-  }
-
-  /**
-   * Execute parser-specific instructions like define.
-   */
-  private runDirectives(lines: SecondPass[]): void {
-    debug(`runDirectives> Received %d lines.`, lines.length)
-
-    lines.forEach((instruction, index) => {
-      const op = this.isa.find(op => op.code === instruction.code)
-
-      if (op) {
-        info(`runDirectives> Found a parser op (%s).`, op.code)
-        debug(`runDirectives> Removing directive from program...`)
-        lines.splice(index, 1)
-        op.fn(...instruction.args)
-      }
-    });
-
-    debug(`runDirectives> Done. Instruction count now %d.`, lines.length)
-  }
-
-  private createInstructions(lines: SecondPass[]): InstructionData[] {
-    debug(`createInstructions> Received %d lines.`, lines.length)
-
-    let count = 1
-    const instructions = lines.map((line): InstructionData => {
-      const { blocks, code, args, comment } = line
-      let boundArgs: Argument[] = []
-
-      if (args.length > 0) {
-        boundArgs = args.map(this.bindArgument.bind(this))
-      }
-
-      return { no: count++, blocks, code, args: boundArgs, comment }
-    })
-
-    return instructions
-  }
-
-  /**
-   * I return the type of argument represented by the given text.
-   */
-  private bindArgument(argText: string): Argument {
-    argText = argText.trim()
-    const firstChar = argText[0]
-
-    if (Parser.BLOCK_PATTERN.test(argText))
-      return new Args.Block(this.blocks[argText])
-
-    if (Parser.LITERAL_PATTERN.test(argText))
-      return new Args.Literal(this.parseLiteral(argText))
-
-    const name = argText.replace(/^\W+/, '')
-    debug(`instantiateArg> %s is a data label. ArgText=%s`, name, argText)
-
-    const address = this.variables[name]
-    debug(`instantiateArg> Address=%d`, address)
-
-    if (!address)
-      throw new Error(`Error: variable name used before definition.`)
-
-    if (firstChar === Parser.ADDRESS_OPERATOR)
-      return new Args.Literal(address)
-
-    if (firstChar === Parser.MEMORY_OPERATOR)
-      return new Args.Variable(address)
-
-    if (firstChar === Parser.DEREF_OPERATOR)
-      return new Args.Pointer(address)
-
-    throw new Error(`Error: unidentified argument "${argText}"`)
-  }
-
-  /**
-   * I return either the label or op text for this line. (For comments and
-   * blank lines, both labels and op text will be void.)
-   * 
-   * For example:
-   * 
-   *     { source: "decr: 0, 1" }  // Decrement operation.
-   *     { label: "startLoop" }    // Label "startLoop".
-   *     { }                       // Comment/blank line.
-   */
-  private parseLine(line: string): { block?: string, source?: string } {
+  private parseLine(line: string): SourceLine {
     line = line.trim()
+    debug(`parseLine> Line=%s`, line)
 
-    let block: string | undefined
-    let source: string | undefined
+    let block: BlockSource | undefined
+    let instruction: InstructionSource | undefined
+    let comment: string | undefined
 
     if (line.length < 1) {
-      debug(`parseLine> %d is an empty line.`, this.instructionCount)
-      return { block, source }
+      debug(`parseLine> Line %d is an empty line.`, this.instructionCount)
+      return { block, instruction, comment }
     }
 
     const firstChar = line[0]
     const isComment = firstChar === Parser.COMMENT_PREFIX
 
     if (isComment) {
-      debug(`parseLine> %d is a comment.`, this.instructionCount)
-      return { block, source }
+      debug(`parseLine> Line %d is a comment.`, this.instructionCount)
+      comment = line
+      return { block, instruction, comment }
     }
 
     const lastChar = line.slice(-1)
     const isBlock = lastChar === Parser.BLOCK_SUFFIX
 
     if (isBlock) {
-      block = line.slice(0, -1)
-      debug(`parseLine> %d is the block "%s".`, this.instructionCount, block)
+      block = { label: line.slice(0, -1) }
+      debug(`parseLine> Line %d is the block "%o".`, this.instructionCount, block)
     }
     else {
-      debug(`parseLine> %d is source code.`, this.instructionCount)
-      source = line
+      debug(`parseLine> Line %d is an instruction.`, this.instructionCount)
+      instruction = this.parseInstructionSource(line)
     }
 
-    return { block, source }
+    return { block, instruction, comment }
+  }
+
+  private parseInstructionSource(line: string): InstructionSource {
+    const hasArguments = Boolean(line.match(Parser.OP_SUFFIX))
+    debug(`parseInstructionSource> Source="%s" HasArgs=%o`, line, hasArguments)
+
+    if (!hasArguments)
+      return { operation: line, arguments: [] }
+
+    const split = line.split(Parser.OP_SUFFIX)
+    const operation = split[0]
+    const argumentSource = <string[]>line
+      .replace(`${operation}${Parser.OP_SUFFIX}`, '')
+      .trim()
+      .split(Parser.ARG_SEP)
+
+    const args = <ArgumentSource[]>argumentSource.map(this.parseArgumentSource.bind(this))
+
+    return { operation, arguments: args }
+  }
+
+  private parseArgumentSource(argText: string): ArgumentSource {
+    argText = argText.trim()
+    const firstChar = argText[0]
+
+    if (Parser.BLOCK_PATTERN.test(argText)) {
+      debug(`parseArgSrc> "%s" is a block label.`, argText)
+      return { type: ArgType.BLOCK, content: argText }
+    }
+
+    if (Parser.LITERAL_PATTERN.test(argText)) {
+      const content = this.parseLiteral(argText)
+      debug(`parseArgSrc> "%s" is a literal. (%d)`, argText, content)
+      return { type: ArgType.LITERAL, content }
+    }
+
+    const sigil = firstChar
+    const content = argText.replace(/^\W+/, '')
+    debug(`instantiateArg> "%s" is a data label with a %s sigil. ArgText=%s`, content, sigil, argText)
+
+    if (sigil === Parser.ADDRESS_SIGIL)
+      return { type: ArgType.ADDRESS, content }
+
+    if (sigil === Parser.VARIABLE_SIGIL)
+      return { type: ArgType.VARIABLE, content }
+
+    if (sigil === Parser.POINTER_SIGIL)
+      return { type: ArgType.POINTER, content }
+
+    throw new Error(`Error: unable to identify argument "${argText}".`)
   }
 
   /**

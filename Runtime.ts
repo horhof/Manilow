@@ -6,7 +6,6 @@ import * as Debug from 'debug'
 
 import { Word, Argument, Literal, Variable, Pointer, Block, PortAddress } from './Argument'
 import { Registers, Flags } from './Registers'
-import { InstructionData } from './Parser'
 import { Kernel } from './Kernel'
 
 const info = Debug('Mel:Runtime')
@@ -37,7 +36,7 @@ export class Runtime {
 
   private kernel: Kernel
 
-  private source: InstructionData[]
+  private source: any[]
 
   private program: Function[]
 
@@ -56,7 +55,7 @@ export class Runtime {
   /**
    * I run the given program until completion.
    */
-  public run(program: InstructionData[]): Promise<void> {
+  public run(program: any[]): Promise<void> {
     return new Promise((resolve, reject) => {
       info(`Running program of %d instructions...`, program.length)
 
@@ -116,7 +115,7 @@ export class Runtime {
     this.bindArguments(args)
 
     if (args.length > 0)
-      info(`%s: %o`, code, args.map(a => a.summary))
+      info(`%s: %o`, code, args.map((a: any) => a.summary))
     else
       info(`%s`, code)
 
