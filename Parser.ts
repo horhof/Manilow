@@ -26,11 +26,11 @@ const debug = Debug('Mel:Parser:Debug')
  * | Pointer  | Pointer  | `*record` | `*`         |
  */
 enum Argument {
-  BLOCK,
-  LITERAL,
-  ADDRESS,
-  VARIABLE,
-  POINTER
+  BLOCK = 'BLOCK',
+  LITERAL = 'LITERAL',
+  ADDRESS = 'ADDRESS',
+  VARIABLE = 'VARIABLE',
+  POINTER = 'POINTER'
 }
 
 interface SourceLine {
@@ -163,7 +163,7 @@ export class Parser {
 
   public getProgram(source: string) {
     //debug(`#getProgram>`)
-    this.instructionCount = 1
+    this.instructionCount = 0
     this.blocks = {}
     this.variables = {}
 
@@ -236,24 +236,46 @@ export class Parser {
   private runDirectives(lines: InstructionSource[]): InstructionSource[] {
     debug(`runDirectives> Received %d lines.`, lines.length)
 
-    lines.forEach((instruction, index) => {
-      const op = this.isa.find(op => op.code === instruction.operation)
+    const instructions = <InstructionSource[]>lines
+      .map((instruction, index): InstructionSource | void => {
+        const op = this.isa.find(op => op.code === instruction.operation)
 
-      if (op) {
-        info(`runDirectives> Found a parser op (%s).`, op.code)
-        debug(`runDirectives> Removing directive from program...`)
-        lines.splice(index, 1)
+        if (!op)
+          return instruction
+
+        debug(`runDirectives> Found a parser op (%s).`, op.code)
         op.fn(...instruction.arguments)
-      }
-    });
+      })
+      .filter(x => x)
 
     debug(`runDirectives> Done. Instruction count now %d.`, lines.length)
-    return lines
+    return instructions
   }
 
-  /** I replace every use of a block as an argument with its  */
-  private replaceBlockArguments() {
-
+  /** I replace every use of a label argument with its address. */
+  private setArgumentAddresses(lines: InstructionSource[]): void {
+    lines.forEach(instruction => {
+      instruction.arguments.forEach(argument => {
+        switch (argument.type) {
+          case Argument.LITERAL:
+            debug(`setArgumentAddresses> Argument "%s" is a literal constant.`, argument.content)
+            return
+          case Argument.BLOCK:
+            {
+              const label = argument.content
+              const address = this.blocks[label]
+              debug(`setArgumentAddresses> Replacing block "%s" with address %d.`, label, address)
+              argument.content = address
+            }
+            break;
+          default:
+            const label = argument.content
+            const address = this.variables[label]
+            debug(`setArgumentAddresses> Replacing variable "%s" with address %d.`, label, address)
+            argument.content = address
+        }
+      })
+    })
   }
 
   /*
