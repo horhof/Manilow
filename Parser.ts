@@ -10,26 +10,6 @@ import * as Debug from 'debug'
 const info = Debug('Mel:Parser:Info')
 const debug = Debug('Mel:Parser:Debug')
 
-interface SourceLine {
-  block?: BlockSource
-  instruction?: InstructionSource
-  comment?: string
-}
-
-interface BlockSource {
-  label: string
-}
-
-interface InstructionSource {
-  operation: string
-  arguments: ArgumentSource[]
-}
-
-interface ArgumentSource {
-  type: Argument
-  content: string | number
-}
-
 /**
  * The arguments to operations are either:
  * 
@@ -53,6 +33,28 @@ enum Argument {
   POINTER
 }
 
+interface SourceLine {
+  block?: BlockSource
+  instruction?: InstructionSource
+  comment?: string
+}
+
+interface BlockSource {
+  label: string
+}
+
+interface InstructionSource {
+  // Added in later pass.
+  blocks?: BlockSource[]
+  operation: string
+  arguments: ArgumentSource[]
+}
+
+interface ArgumentSource {
+  type: Argument
+  content: string | number
+}
+
 /**
  * I take incoming source code and return a parsed program.
  * 
@@ -66,41 +68,51 @@ enum Argument {
  */
 export class Parser {
   /**
+   * Terminate an instruction.
+   * 
    * ```asm
-   * DEC 0
-   * #    ^ End of line is the end of the instruction.
+   * decr: 0
+   * #      ^
    * ```
    */
   static INSTRUCTION_SUFFIX = `\n`
 
   /**
+   * Terminate an instruction label.
+   * 
    * ```asm
    * start program: 
-   * #            ^ Colon terminates a label.
+   * #            ^
    * ```
    */
   static BLOCK_SUFFIX = `:`
 
   /**
+   * End an operation and begin an argument list.
+   * 
    * ```asm
    * add: 0d1, 1  
-   * #  ^ Operations end with a colon.
+   * #  ^
    * ```
    */
   static OP_SUFFIX = `:`
 
   /**
+   * Separate arguments after an operation.
+   * 
    * ```asm
    * sub: 0x10, 1
-   * #        ^ Arguments are separated by commas.
+   * #        ^
    * ```
    */
   static ARG_SEP = `,`
 
   /**
+   * Introduce comments.
+   * 
    * ```asm
    * halt  # End program.
-   * #     ^ Introduce comments with a pound sign.
+   * #     ^
    * ```
    */
   static COMMENT_PREFIX = `#`
@@ -110,25 +122,31 @@ export class Parser {
   static LITERAL_PATTERN = /^0[a-z]/
 
   /**
+   * Get the address of a variable.
+   * 
    * ```asm
    * copy: &record, 0
-   * #     ^ Get the address of a variable with an ampersand.
+   * #     ^
    * ```
    */
   static ADDRESS_SIGIL = `&`
 
   /**
+   * Access the value of a data label.
+   * 
    * ```asm
    * add: @record
-   * #    ^ Access the value of a variable with an at symbol.
+   * #    ^
    * ```
    */
   static VARIABLE_SIGIL = `@`
 
   /**
+   * Dereference data labels.
+   * 
    * ```asm
    * add: *stack
-   * #    ^ Dereference addresses with an asterisk.
+   * #    ^
    * ```
    */
   static POINTER_SIGIL = `*`
@@ -161,9 +179,95 @@ export class Parser {
       debug(`Block=%o Op=%o Args=%o Comment=%o`, l.block, operation, args, l.comment)
     })
 
-    process.exit(1)
-    return []
+    let instructions = this.assignBlocks(lines)
+    instructions = this.runDirectives(instructions)
+
+    return instructions
   }
+
+  /**
+   * I assign block labels into the data structure for instructions. Separate
+   * lines for comments and block labels are removed.
+   */
+  private assignBlocks(lines: SourceLine[]): InstructionSource[] {
+    debug(`assignBlocks> Received %d lines.`, lines.length)
+
+    let blocks: BlockSource[] = []
+
+    const instructions = <InstructionSource[]>lines
+      .map((line): InstructionSource | void => {
+        const { block, instruction } = line
+
+        if (!blocks && !instruction)
+          return
+
+        if (block) {
+          debug(`assignBlocks> Found block "%s". Pushing to block table...`, block.label)
+          blocks.push(block)
+        }
+        else if (instruction) {
+          if (blocks.length > 0) {
+            const { operation } = instruction
+
+            info(`assignBlocks> Blocks %o will point to an "%s" operation.`,
+              blocks.map(x => x.label),
+              operation)
+
+            instruction.blocks = blocks
+            blocks = []
+          }
+          this.instructionCount++
+
+          return instruction
+        }
+      })
+      .filter(x => x)
+
+    debug(`assignBlocks> Returning %d instructions...`, instructions.length)
+    return instructions
+  }
+
+  /**
+   * Define data labels.
+   * 
+   * After this step, the instructions will be in their final order and block
+   * label arguments can be replaced with that index number.
+   */
+  private runDirectives(lines: InstructionSource[]): InstructionSource[] {
+    debug(`runDirectives> Received %d lines.`, lines.length)
+
+    lines.forEach((instruction, index) => {
+      const op = this.isa.find(op => op.code === instruction.operation)
+
+      if (op) {
+        info(`runDirectives> Found a parser op (%s).`, op.code)
+        debug(`runDirectives> Removing directive from program...`)
+        lines.splice(index, 1)
+        op.fn(...instruction.arguments)
+      }
+    });
+
+    debug(`runDirectives> Done. Instruction count now %d.`, lines.length)
+    return lines
+  }
+
+  /** I replace every use of a block as an argument with its  */
+  private replaceBlockArguments() {
+
+  }
+
+  /*
+  private assignBlock2s(lines: SecondPass[]): void {
+    lines.forEach(line => {
+      if (line.blocks.length > 0) {
+        line.blocks.forEach((label, index) => {
+          this.blocks[label] = index + 1
+          info(`Assigning label "%s" the value of instruction #%d.`, label, index + 1)
+        })
+      }
+    })
+  }
+  */
 
   private parseLine(line: string): SourceLine {
     line = line.trim()
@@ -278,8 +382,10 @@ export class Parser {
     return parseInt(value, radix)
   }
 
-  private define(label: string, address: number): void {
-    debug(`define> Label=%s Address=%n`, label, address)
-    this.variables[label] = address
+  private define(block: ArgumentSource, target: ArgumentSource): void {
+    debug(`define> Block=%o Target=%o`, block, target)
+    const address = Number(target.content)
+    this.variables[block.content] = address
+    info(`define> Variable "%s" points to address %d.`, block.content, address)
   }
 }
