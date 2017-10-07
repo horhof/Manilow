@@ -88,6 +88,9 @@ export class Registers {
   /** Instruction pointer. */
   public instr: Register
 
+  /** Stack pointer. */
+  public stack: Register
+
   public memory: Word[]
 
   public io: Channel[]
@@ -103,6 +106,7 @@ export class Registers {
     this.instr.write(Runtime.STARTING_INSTRUCTION)
     this.flags = new FlagsRegister(address++)
     this.flags.link(this.memory)
+    this.stack = this.initRegister(address++)
 
     address = 0
     this.input = this.initPort(address++)
