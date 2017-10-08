@@ -181,6 +181,12 @@ export class Parser {
 
     let instructions = this.assignBlocks(lines)
     instructions = this.runDirectives(instructions)
+    debug(`#getProgram> Blocks=%o`, this.blocks)
+    debug(`#getProgram> Variables=%o`, this.variables)
+    this.setBlockAddresses(instructions)
+    this.setArgumentAddresses(instructions)
+
+    instructions.forEach(instruction => delete instruction.blocks)
 
     return instructions
   }
@@ -203,13 +209,14 @@ export class Parser {
 
         if (block) {
           debug(`assignBlocks> Found block "%s". Pushing to block table...`, block.label)
+          this.blocks[block.label] = NaN
           blocks.push(block)
         }
         else if (instruction) {
           if (blocks.length > 0) {
             const { operation } = instruction
 
-            info(`assignBlocks> Blocks %o will point to an "%s" operation.`,
+            info(`Blocks %o will point to an "%s" operation.`,
               blocks.map(x => x.label),
               operation)
 
@@ -252,10 +259,33 @@ export class Parser {
     return instructions
   }
 
+  private setBlockAddresses(lines: InstructionSource[]): void {
+    debug(`setBlockAddresses> Received %d lines.`, lines.length)
+
+    lines.forEach((instruction, index) => {
+      if (!instruction.blocks || instruction.blocks.length < 1)
+        return
+
+      const address = index
+      debug(`setBlockAddresses> Instruction %s has blocks: %o.`, instruction.operation, instruction.blocks)
+
+      instruction.blocks.forEach((block, index) => {
+        const { label } = block
+        this.blocks[label] = address
+        info(`Assigning label "%s" the value of instruction #%d.`, label, address)
+      })
+    })
+
+    debug(`setBlockAddresses> Blocks=%O`, this.blocks)
+  }
+
   /** I replace every use of a label argument with its address. */
   private setArgumentAddresses(lines: InstructionSource[]): void {
+    debug(`setArgumentAddresses> Received %d lines.`, lines.length)
+
     lines.forEach(instruction => {
       instruction.arguments.forEach(argument => {
+        //debug(`setArgumentAddresses> Switch on argument "%s".`, argument.content)
         switch (argument.type) {
           case Argument.LITERAL:
             debug(`setArgumentAddresses> Argument "%s" is a literal constant.`, argument.content)
@@ -264,32 +294,21 @@ export class Parser {
             {
               const label = argument.content
               const address = this.blocks[label]
-              debug(`setArgumentAddresses> Replacing block "%s" with address %d.`, label, address)
+              debug(`setArgumentAddresses> Replacing block "%s" with address %o.`, label, address)
               argument.content = address
             }
             break;
           default:
-            const label = argument.content
-            const address = this.variables[label]
-            debug(`setArgumentAddresses> Replacing variable "%s" with address %d.`, label, address)
-            argument.content = address
+            {
+              const label = argument.content
+              const address = this.variables[label]
+              debug(`setArgumentAddresses> Replacing variable "%s" with address %d.`, label, address)
+              argument.content = address
+            }
         }
       })
     })
   }
-
-  /*
-  private assignBlock2s(lines: SecondPass[]): void {
-    lines.forEach(line => {
-      if (line.blocks.length > 0) {
-        line.blocks.forEach((label, index) => {
-          this.blocks[label] = index + 1
-          info(`Assigning label "%s" the value of instruction #%d.`, label, index + 1)
-        })
-      }
-    })
-  }
-  */
 
   private parseLine(line: string): SourceLine {
     line = line.trim()
@@ -408,6 +427,6 @@ export class Parser {
     debug(`define> Block=%o Target=%o`, block, target)
     const address = Number(target.content)
     this.variables[block.content] = address
-    info(`define> Variable "%s" points to address %d.`, block.content, address)
+    info(`Variable "%s" points to address %d.`, block.content, address)
   }
 }
