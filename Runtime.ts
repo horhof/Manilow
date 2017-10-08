@@ -1,11 +1,10 @@
 /**
- * Defines the interpreter.
+ * Defines the runtime.
  */
 
 import * as Debug from 'debug'
 
 import { InstructionSource, ArgumentType, ArgumentSource } from './Parser'
-import * as Parser from './Parser'
 import { Word, Argument, Literal, Variable, Pointer, Block, PortAddress } from './Argument'
 import { Registers, Flags } from './Registers'
 import { Kernel } from './Kernel'
@@ -20,20 +19,19 @@ interface Instruction {
 }
 
 /**
- * I am given a parsed program together with the memory / registers that store
- * state and the kernel that performs the operations. I create the arguments,
- * pass them to the kernel operations, and iterate through the program.
+ * I am given a set of data structures representing the parsed source code, the
+ * memory and registers that store the machine state, and the kernel which
+ * performs operations. I bind the operation and arguments to the underlying
+ * state, assemble a list of lambdas to execute and then iterate through the
+ * program.
  * 
  * API:
  * - <Run>: program.
  * - Step.
  */
 export class Runtime {
-  /**
-   * The interpreter will run at most this many instructions, regardless of
-   * whether the program has finished or not.
-   */
-  static MAX_OPS = 50
+  /** I halt here regardless of if the program has finished. */
+  static MAX_STEPS = 50
 
   static STARTING_INSTRUCTION = 0
 
@@ -45,11 +43,8 @@ export class Runtime {
 
   private program: Instruction[]
 
-  /**
-   * When running, I keep track of the number of steps I've preformed in order
-   * to enforce a maximum number of operations.
-   */
-  private loopCounter: number
+  /** I track the steps to enforce a maximum number of operations. */
+  private steps: number
 
   constructor(registers: Registers, memory: Word[], kernel: Kernel) {
     this.registers = registers
@@ -60,12 +55,12 @@ export class Runtime {
   /**
    * I run the given program until completion.
    */
-  public run(source: any[]): Promise<void> {
+  public run(source: InstructionSource[]): Promise<void> {
     return new Promise((resolve, reject) => {
       info(`Running program of %d instructions...`, source.length)
 
       this.program = this.loadProgram(source)
-      this.loopCounter = 0
+      this.steps = 0
 
       if (process.env['STEP']) {
         info(`Running program in step-by-step mode. Press enter to step forward.`)
@@ -74,15 +69,14 @@ export class Runtime {
             info(`Halt in step-by-step mode. Resolving...`)
             resolve()
           }
-          else {
+          else
             this.step()
-          }
         })
       }
       else {
-        while (!this.registers.flags.get(Flags.HALT)) {
+        while (!this.registers.flags.get(Flags.HALT))
           this.step()
-        }
+
         info(`Halt in automatic mode. Resolving...`)
         resolve()
       }
@@ -129,8 +123,8 @@ export class Runtime {
       return this.halt()
     }
 
-    this.loopCounter++
-    if (this.loopCounter > Runtime.MAX_OPS) {
+    this.steps++
+    if (this.steps > Runtime.MAX_STEPS) {
       info(`Too many ops. Terminated on op #%o.`, no)
       return this.halt()
     }
