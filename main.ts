@@ -32,4 +32,5 @@ console.log('Main entry> Running program...')
 vm.run('source.s')
   .then(() => {
     console.log('Main entry> Exit.')
+    process.exit(0)
   })
