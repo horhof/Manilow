@@ -11,6 +11,8 @@
 
 import * as Debug from 'debug'
 
+import { Registers } from './Registers'
+
 const info = Debug('Mel:Parser:Info')
 const debug = Debug('Mel:Parser:Debug')
 
@@ -155,10 +157,13 @@ export class Parser {
     { code: 'define', fn: this.define.bind(this) },
   ]
 
+  constructor(registers: Registers) {
+    this.variables = JSON.parse(JSON.stringify(registers.map))
+  }
+
   public getProgram(source: string) {
     //debug(`#getProgram>`)
     this.blocks = {}
-    this.variables = {}
 
     //debug(`#getProgram> Source=%o`, source)
     const lines = <SourceLine[]>source

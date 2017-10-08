@@ -109,6 +109,8 @@ export class Registers {
   /** Stack pointer. */
   public stack: Register
 
+  public map: { [label: string]: number }
+
   public memory: Memory
 
   public io: Channels
@@ -117,24 +119,29 @@ export class Registers {
     this.memory = memory
     this.io = io
 
+    this.map = {}
+
     let address = 0
-    this.accum = this.initRegister(address++)
-    this.data = this.initRegister(address++)
-    this.instr = this.initRegister(address++)
+    this.accum = this.initRegister('accum', address++)
+    this.data = this.initRegister('data', address++)
+    this.instr = this.initRegister('instr', address++)
+    this.stack = this.initRegister('stack', address++)
+
     this.instr.write(Runtime.STARTING_INSTRUCTION)
     this.flags = new FlagsRegister(address++, this.memory)
-    this.stack = this.initRegister(address++)
+    this.map['instr'] = address
 
     address = 0
-    this.input = this.initPort(address++)
-    this.output = this.initPort(address++)
+    this.input = this.initPort('input', address++)
+    this.output = this.initPort('output', address++)
   }
 
   /**
    * The rest are initialized as data addresses tied to memory.
    */
-  private initRegister(address: number): Register {
+  private initRegister(label: string, address: number): Register {
     const register = new Register(address, this.memory)
+    this.map[label] = address
     return register
   }
 
@@ -142,8 +149,9 @@ export class Registers {
    * The I/O registers are initialized as ports connected to the I/O
    * channels.
    */
-  private initPort(address: number): Port {
+  private initPort(label: string, address: number): Port {
     const port = new Port(address, this.io)
+    this.map[label] = address
     return port
   }
 }
