@@ -38,6 +38,9 @@ const io = Debug('Mel:I/O')
 export type Word = number
 
 class State {
+  /** Each address is holding how many bits? */
+  static CELL_BITS = 8
+
   public get(address?: number): Word {
     return NaN
   }
@@ -55,12 +58,28 @@ export class Memory extends State {
     this.data = data
   }
 
-  public get(address: number): Word {
-    return this.data[address]
+  public get(address: number, bits = State.CELL_BITS): Word {
+    const cells = bits / State.CELL_BITS
+    return this.mask(this.data[address], bits)
   }
 
-  public set(address: number, value: Word): void {
-    this.data[address] = value
+  public set(address: number, value: Word, bits = State.CELL_BITS): void {
+    this.data[address] = this.mask(value, bits)
+  }
+
+  protected slice(address: number, bits: number): number {
+    const cells = bits / State.CELL_BITS
+    this.data.slice(address, )
+
+    return 0
+  }
+
+  protected mask(value: number, bit?: number): number {
+    if (!bit)
+      return value
+
+    const mask = Math.pow(2, bit) - 1
+    return 0
   }
 }
 
@@ -189,6 +208,11 @@ export class Variable extends Mutable {
  * address and do a second memory access to get it.
  */
 export class Pointer extends Variable {
+  /**
+   * I access memory at my data point in order to report that value as my
+   * address. When my value is read, it will do a second memory access to get
+   * the deferenced value.
+   */
   public get address(): number {
     return this.state.get(this.data)
   }
