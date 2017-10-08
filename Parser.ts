@@ -1,6 +1,10 @@
 /**
  * Defines the parser.
  * 
+ * Types:
+ * - Argument
+ * - InstructionSource
+ * 
  * Classes:
  * - Parser
  */
@@ -25,7 +29,7 @@ const debug = Debug('Mel:Parser:Debug')
  * | Variable | Variable | `@record` | `@`         |
  * | Pointer  | Pointer  | `*record` | `*`         |
  */
-enum Argument {
+export enum ArgumentType {
   BLOCK = 'BLOCK',
   LITERAL = 'LITERAL',
   ADDRESS = 'ADDRESS',
@@ -43,15 +47,15 @@ interface BlockSource {
   label: string
 }
 
-interface InstructionSource {
+export interface InstructionSource {
   // Added in later pass.
   blocks?: BlockSource[]
   operation: string
   arguments: ArgumentSource[]
 }
 
-interface ArgumentSource {
-  type: Argument
+export interface ArgumentSource {
+  type: ArgumentType
   content: string | number
 }
 
@@ -151,8 +155,6 @@ export class Parser {
    */
   static POINTER_SIGIL = `*`
 
-  private instructionCount: number
-
   private blocks: { [label: string]: number }
 
   private variables: { [label: string]: number }
@@ -163,7 +165,6 @@ export class Parser {
 
   public getProgram(source: string) {
     //debug(`#getProgram>`)
-    this.instructionCount = 0
     this.blocks = {}
     this.variables = {}
 
@@ -223,7 +224,6 @@ export class Parser {
             instruction.blocks = blocks
             blocks = []
           }
-          this.instructionCount++
 
           return instruction
         }
@@ -287,10 +287,10 @@ export class Parser {
       instruction.arguments.forEach(argument => {
         //debug(`setArgumentAddresses> Switch on argument "%s".`, argument.content)
         switch (argument.type) {
-          case Argument.LITERAL:
+          case ArgumentType.LITERAL:
             debug(`setArgumentAddresses> Argument "%s" is a literal constant.`, argument.content)
             return
-          case Argument.BLOCK:
+          case ArgumentType.BLOCK:
             {
               const label = argument.content
               const address = this.blocks[label]
@@ -372,13 +372,13 @@ export class Parser {
 
     if (Parser.BLOCK_PATTERN.test(argText)) {
       //debug(`parseArgSrc> "%s" is a block label.`, argText)
-      return { type: Argument.BLOCK, content: argText }
+      return { type: ArgumentType.BLOCK, content: argText }
     }
 
     if (Parser.LITERAL_PATTERN.test(argText)) {
       const content = this.parseLiteral(argText)
       //debug(`parseArgSrc> "%s" is a literal. (%d)`, argText, content)
-      return { type: Argument.LITERAL, content }
+      return { type: ArgumentType.LITERAL, content }
     }
 
     const sigil = firstChar
@@ -386,13 +386,13 @@ export class Parser {
     //debug(`instantiateArg> "%s" is a data label with a %s sigil. ArgText=%s`, content, sigil, argText)
 
     if (sigil === Parser.ADDRESS_SIGIL)
-      return { type: Argument.ADDRESS, content }
+      return { type: ArgumentType.ADDRESS, content }
 
     if (sigil === Parser.VARIABLE_SIGIL)
-      return { type: Argument.VARIABLE, content }
+      return { type: ArgumentType.VARIABLE, content }
 
     if (sigil === Parser.POINTER_SIGIL)
-      return { type: Argument.POINTER, content }
+      return { type: ArgumentType.POINTER, content }
 
     throw new Error(`Error: unable to identify argument "${argText}".`)
   }
