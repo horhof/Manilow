@@ -155,7 +155,7 @@ export class Kernel {
    * immediate value.
    */
   private applySrcToDest(fn: BinaryTransform) {
-    return (src: Literal = this.registers.data, dest: Literal = this.registers.accum): void => {
+    return (src: Literal = this.registers.data, dest: Variable = this.registers.accum): void => {
       const result = fn(dest.read(), src.read())
       dest.write(result)
     }

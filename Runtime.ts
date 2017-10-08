@@ -5,7 +5,7 @@
 import * as Debug from 'debug'
 
 import { InstructionSource, ArgumentType, ArgumentSource } from './Parser'
-import { Word, Argument, Literal, Variable, Pointer, Block, PortAddress } from './Argument'
+import { Word, Memory, Channels, Argument, Literal, Variable, Pointer, Block } from './Argument'
 import { Registers, Flags } from './Registers'
 import { Kernel } from './Kernel'
 
@@ -14,8 +14,9 @@ const debug = Debug('Mel:Runtime:Debug')
 const memoryDebug = Debug('Mel:Memory')
 
 interface Instruction {
-  instruction: Function
-  source: InstructionSource
+  lambda: Function
+  op: string
+  args: Argument[]
 }
 
 /**
@@ -37,7 +38,7 @@ export class Runtime {
 
   private registers: Registers
 
-  private memory: Word[]
+  private memory: Memory
 
   private kernel: Kernel
 
@@ -46,15 +47,13 @@ export class Runtime {
   /** I track the steps to enforce a maximum number of operations. */
   private steps: number
 
-  constructor(registers: Registers, memory: Word[], kernel: Kernel) {
+  constructor(registers: Registers, memory: Memory, kernel: Kernel) {
     this.registers = registers
     this.memory = memory
     this.kernel = kernel
   }
 
-  /**
-   * I run the given program until completion.
-   */
+  /** I run the given program until completion. */
   public run(source: InstructionSource[]): Promise<void> {
     return new Promise((resolve, reject) => {
       info(`Running program of %d instructions...`, source.length)
@@ -84,33 +83,31 @@ export class Runtime {
   }
 
   /**
-   * Loop through every instruction in the program, lookup the code in the kernel
-   * (if it exists), instantiate the instruction's operands as values or address
-   * and execute the instruction's function.
+   * I read the instruction pointer, grab that instruction from the program,
+   * execute it, increment the instruction pointer, and loop.
    */
   public step(): void {
     const no = this.registers.instr.read()
-    const instruction = this.program[no]
+    const { lambda, op, args } = this.program[no]
 
-    //debug(`#step> Raw instruction: IP=%o Op=%o`, no, instruction)
+    debug(`#step> Raw instruction: IP=%o Op=%o`, no, op)
     info(`Running instruction %d/%d...`, no, this.program.length)
 
-    if (!instruction) {
+    if (!lambda) {
       info(`Instruction ${no} not found. Halting...`)
       return this.halt()
     }
 
-
-    if (instruction.source.arguments.length > 0)
-      info(`%s: %o`,
-        instruction.source.operation,
-        instruction.source.arguments.map((a: any) => a.summary))
+    if (args.length > 0)
+      info(`%s: %o %o`,
+        op,
+        args.map((a: any) => a.summary))
     else
-      info(`%s`, instruction.source.operation)
+      info(`%s`, op)
 
-    instruction.instruction()
-    memoryDebug(`Input=%o`, this.registers.io[0].data)
-    memoryDebug(`Output=%o`, this.registers.io[1].data)
+    lambda()
+    memoryDebug(`Input=%o`, this.registers.io.data[0])
+    memoryDebug(`Output=%o`, this.registers.io.data[1])
     memoryDebug(`Memory=%o`, this.memory)
 
     // Re-read the instruction pointer in case an operation has manipulated it.
@@ -132,18 +129,15 @@ export class Runtime {
 
   public loadProgram(instructions: InstructionSource[]): Instruction[] {
     return instructions.map(source => {
-      const op = this.bindOperation(source.operation)
-      const args = source.arguments
-        .map(argumentSource => {
-          const argument = this.createArgument(argumentSource)
-          this.bindArgument(argument)
-          return argument
-        })
-      const instruction = () => { op(...args) }
-      return { instruction, source }
+      const fn = this.bindOperation(source.operation)
+      const args = <Argument[]>source.arguments
+        .map(this.bindArgument.bind(this))
+      const lambda = () => { fn(...args) }
+      return { lambda, op: source.operation, args }
     })
   }
 
+  /** I take a string presenting an operation and return the function for it. */
   private bindOperation(operation: string): Function {
     const op = this.kernel.lookupOp(operation)
 
@@ -153,10 +147,8 @@ export class Runtime {
     return op.fn
   }
 
-  /**
-   * I return the type of argument represented by the given text.
-   */
-  private createArgument(argumentSource: ArgumentSource): Argument {
+  /** I return the type of argument represented by the given source. */
+  private bindArgument(argumentSource: ArgumentSource): Argument {
     const content = Number(argumentSource.content)
 
     switch (argumentSource.type) {
@@ -171,20 +163,13 @@ export class Runtime {
         return new Literal(content)
       case ArgumentType.VARIABLE:
         debug(`bindArgument> Variable %o.`, content)
-        return new Variable(content)
+        return new Variable(content, this.memory)
       case ArgumentType.POINTER:
         debug(`bindArgument> Pointer %o.`, content)
-        return new Pointer(content)
+        return new Pointer(content, this.memory)
       default:
         throw new Error(`Error: can't identify argument type "${argumentSource.type}".`)
     }
-  }
-
-  private bindArgument(argument: Argument): void {
-    if (argument instanceof PortAddress)
-      argument.attach(this.registers.io)
-    else if (argument instanceof Variable)
-      argument.link(this.memory)
   }
 
   /** Set the halt flag. The runtime halts on the next step. */

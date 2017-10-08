@@ -7,19 +7,37 @@
 
 import * as Debug from 'debug'
 
-import { Word, Variable, PortAddress, Channel, Argument } from './Argument'
+import { Word, Memory, Channels, Variable, Mutable, Argument } from './Argument'
 import { Runtime } from './Runtime'
 
 const log = Debug('Mel:Registers')
+const io = Debug('Mel:I/O')
 
 export enum Flags {
   HALT
 }
 
-class Register extends Variable {
-}
+class Register extends Variable { }
 
-class Port extends PortAddress {
+/**
+ * I am an address not for a memory location but an I/O channel. I read from
+ * and write to the channel's queue.
+ */
+export class Port extends Mutable {
+  public read(): Word {
+    const value = this.state.get(this.address)
+    io('IN %O', value)
+    return value
+  }
+
+  public write(value: Word): void {
+    io('OUT %O', value)
+    this.state.set(this.address, value)
+  }
+
+  public get summary(): string {
+    return `Port ${this.address} ( = ${this.read()})`
+  }
 }
 
 /**
@@ -91,11 +109,11 @@ export class Registers {
   /** Stack pointer. */
   public stack: Register
 
-  public memory: Word[]
+  public memory: Memory
 
-  public io: Channel[]
+  public io: Channels
 
-  constructor(memory: Word[], io: Channel[]) {
+  constructor(memory: Memory, io: Channels) {
     this.memory = memory
     this.io = io
 
@@ -104,20 +122,19 @@ export class Registers {
     this.data = this.initRegister(address++)
     this.instr = this.initRegister(address++)
     this.instr.write(Runtime.STARTING_INSTRUCTION)
-    this.flags = new FlagsRegister(address++)
-    this.flags.link(this.memory)
+    this.flags = new FlagsRegister(address++, this.memory)
     this.stack = this.initRegister(address++)
 
     address = 0
     this.input = this.initPort(address++)
+    this.output = this.initPort(address++)
   }
 
   /**
    * The rest are initialized as data addresses tied to memory.
    */
   private initRegister(address: number): Register {
-    const register = new Register(address)
-    register.link(this.memory)
+    const register = new Register(address, this.memory)
     return register
   }
 
@@ -126,8 +143,7 @@ export class Registers {
    * channels.
    */
   private initPort(address: number): Port {
-    const port = new Port(address)
-    port.attach(this.io)
+    const port = new Port(address, this.io)
     return port
   }
 }

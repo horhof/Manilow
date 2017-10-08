@@ -8,13 +8,23 @@
  * - ArgType
  * 
  * Classes:
+ * 
+ * Holding state:
+ * 
+ * - Memory
+ * - Channel
+ * 
+ * Addressing state:
+ * 
  * - Argument
  * - Constant
- * - InstructionAddress
  * - Variable
  * - Pointer
- * - Channel
- * - PortAddress
+ * - Port
+ * 
+ * Addressing instructions:
+ * 
+ * - Block
  */
 
 import * as Debug from 'debug'
@@ -27,27 +37,63 @@ const io = Debug('Mel:I/O')
  */
 export type Word = number
 
-/**
- * The arguments to operations are either:
- * 
- * 1. compile-time constants directly in the source code,
- * 2. the data that operations act on,
- * 3. the blocks that organize operations.
- * 
- * |  Type    |  Class   |  Example  | Starts with |
- * | -------- | -------- | --------- | ----------- |
- * | Block    | Block    | `reset`   | Letter      |
- * | Literal  | Literal  | `0d13`    | 0 + letter  |
- * | Address  | Literal  | `&record` | `&`         |
- * | Variable | Variable | `@record` | `@`         |
- * | Pointer  | Pointer  | `*record` | `*`         |
- */
-export enum ArgType {
-  BLOCK,
-  LITERAL,
-  ADDRESS,
-  VARIABLE,
-  POINTER
+class State {
+  public get(address?: number): Word {
+    return NaN
+  }
+
+  public set(value: Word, address?: number): void {
+    //
+  }
+}
+
+export class Memory extends State {
+  public data: Word[]
+
+  constructor(data: Word[] = []) {
+    super()
+    this.data = data
+  }
+
+  public get(address: number): Word {
+    return this.data[address]
+  }
+
+  public set(address: number, value: Word): void {
+    this.data[address] = value
+  }
+}
+
+export class Channels extends State {
+  public data: Word[][]
+
+  constructor(data: Word[][] = [[]]) {
+    super()
+    this.data = data
+  }
+
+  public get(address: number): Word {
+    const channel = this.data[address]
+
+    if (channel == null)
+      throw new Error(`Error: no such channel`)
+
+    const value = channel.shift()
+
+    if (value == null)
+      throw new Error(`Error: channel was empty at time of access.`)
+
+    return value
+  }
+
+  public set(address: number, value: Word): void {
+    const channel = this.data[address]
+
+    if (channel == null)
+      throw new Error(`Error: no such channel`)
+
+    channel.push(value)
+  }
 }
 
 /**
@@ -56,10 +102,7 @@ export enum ArgType {
  * reading and writing of it.
  *  
  * API:
- * - Data
- * - Summary
  * - Read = word of data
- * - Write: word.
  */
 export class Argument {
   /**
@@ -76,31 +119,40 @@ export class Argument {
   public read(): Word {
     return this.data
   }
-
-  public write(value: Word): void {
-    // Overridden by child classes.
-  }
-
-  /** A human-readable representation of this argument. */
-  public get summary(): string {
-    // Overridden by child classes.
-    return ``
-  }
 }
 
 /**
  * I am an operand whose data value is directly held. The data is a compile
- * time constant directly from the instructiosn in the code.
- * 
- * I disallow write operations.
+ * time constant directly from the instructiosn in the code. There is no bound
+ * state. I disallow write operations.
  */
 export class Literal extends Argument {
   public get summary(): string {
     return `Literal ${this.data}`
   }
+}
+
+export class Mutable extends Argument {
+  /**
+   * Memory is used for addresses/pointers but not for immediate values.
+   */
+  protected state: State
+
+  constructor(data: number, state: State) {
+    super(data)
+    this.state = state
+  }
+
+  public read(): Word {
+    return this.state.get(this.address)
+  }
 
   public write(value: Word): void {
-    throw new Error(`Error: literal values are immutable.`)
+    return this.state.set(this.address, value)
+  }
+
+  public get address(): number {
+    return this.data
   }
 }
 
@@ -120,46 +172,12 @@ export class Address extends Literal {
   }
 }
 
+
 /**
- * I am an operand pointing to a memory address. Operations will read and write
- * to the value inside that address.
+ * I am an operand that is bound to some kind of state and whose read nad write
+ * operations mutate that state.
  */
-export class Variable extends Argument {
-  /**
-   * Memory is used for addresses/pointers but not for immediate values.
-   */
-  protected memory: Word[]
-
-  /**
-   * Whether or not the memory backing this variable has been established.
-   */
-  protected linked: boolean
-
-  constructor(data: number) {
-    super(data)
-    this.linked = false
-  }
-
-  public read(): Word {
-    return this.memory[this.address] || Argument.ZERO
-  }
-
-  public write(value: Word): void {
-    this.memory[this.address] = value
-  }
-
-  /**
-   * Attach a data source where values can be read / written.
-   */
-  public link(source: Word[]): void {
-    this.memory = source
-    this.linked = true
-  }
-
-  public get address(): number {
-    return this.data
-  }
-
+export class Variable extends Mutable {
   public get summary(): string {
     return `Variable ${this.address} (value is ${this.read()})`
   }
@@ -172,66 +190,10 @@ export class Variable extends Argument {
  */
 export class Pointer extends Variable {
   public get address(): number {
-    return this.memory[this.data]
+    return this.state.get(this.data)
   }
 
   public get summary(): string {
     return `Pointer ${this.data} (address is ${this.address}, value is ${this.read()})`
-  }
-}
-
-/**
- * I represent a queue of words coming from and going to the outside of the
- * program.
- * 
- * API:
- * - push: word.
- * - pull = word
- */
-export class Channel {
-  public data: Word[]
-
-  constructor(data: Word[] = []) {
-    this.data = data
-  }
-
-  public push(value: Word): void {
-    this.data.push(value)
-  }
-
-  public pull(): Word {
-    const value = this.data.shift()
-    if (value == null)
-      throw new Error(`Input channel was empty at time of access.`)
-    return value
-  }
-}
-
-/**
- * I am an address not for a memory location but an I/O channel. I read from
- * and write to the channel's queue.
- */
-export class PortAddress extends Variable {
-  private channels: Channel[]
-
-  public read(): Word {
-    const value = this.channels[this.address].pull()
-    io('IN %O', value)
-    return value
-  }
-
-  public write(value: Word): void {
-    io('OUT %O', value)
-    this.channels[this.address].push(value)
-  }
-
-  /** Attach a data source where values can be read / written. */
-  public attach(source: Channel[]): void {
-    this.channels = source
-    this.linked = true
-  }
-
-  public get summary(): string {
-    return `Port ${this.address} ( = ${this.read()})`
   }
 }

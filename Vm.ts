@@ -6,7 +6,7 @@ import * as fs from 'fs'
 import * as Debug from 'debug'
 
 import { Parser } from './Parser'
-import { Word, Channel } from './Argument'
+import { Word, Memory, Channels } from './Argument'
 import { Kernel } from './Kernel'
 import { Registers } from './Registers'
 import { Runtime } from './Runtime'
@@ -20,11 +20,11 @@ const log = Debug('Mel:Vm')
  * - <run>: filename.
  */
 export class Vm {
-  private memory: Word[]
+  private memory: Memory
 
   private registers: Registers
 
-  private io: Channel[]
+  private io: Channels
 
   private kernel: Kernel
 
@@ -51,7 +51,8 @@ export class Vm {
     log(`Running program...`)
     return this.interpreter.run(program)
       .then(() => {
-        const [input, output] = this.io
+        const input = this.io.get(0)
+        const output = this.io.get(1)
         log(`Final state:`)
         log(`Memory=%O`, this.memory)
         log(`Input=%O`, input)
@@ -67,14 +68,14 @@ export class Vm {
 
   private initMemory(): void {
     log(`Initializing memory...`)
-    this.memory = Array(Registers.NUM_REGISTERS).fill(0)
+    this.memory = new Memory(Array(Registers.NUM_REGISTERS).fill(0))
   }
 
   private initIo(): void {
     log(`Initializing I/O channels...`)
-    const input = new Channel([3, 2, 0, 5, 17, 0, 23])
-    const output = new Channel()
-    this.io = [input, output]
+    const input: Word[] = [3, 2, 0, 5, 17, 0, 23]
+    const output: Word[] = []
+    this.io = new Channels([input, output])
   }
 
   private initRegisters(): void {
