@@ -182,7 +182,7 @@ export class Kernel {
     const addr = dest.read()
     const ip = this.registers.instr
     log(`#jump> Addr=%o IP=%d`, addr, ip.read())
-    ip.write(addr + 1)
+    ip.write(addr - 1)
     log(`#jump> After jump. IP=%d`, ip.read())
   }
 
@@ -205,7 +205,7 @@ export class Kernel {
       const addr = dest.read()
       const ip = this.registers.instr
       log(`Predicate was true. Jumping from %d to %d...`, ip.read(), addr)
-      ip.write(addr + 1)
+      ip.write(addr - 1)
       log(`IP is now %o.`, ip.read())
     }
   }
