@@ -15,8 +15,8 @@ const debug = Debug('Mel:Runtime:Debug')
 const memoryDebug = Debug('Mel:Memory')
 
 interface Instruction {
-  operation: Function
-  arguments: Argument[]
+  instruction: Function
+  source: InstructionSource
 }
 
 /**
@@ -43,9 +43,7 @@ export class Runtime {
 
   private kernel: Kernel
 
-  private source: InstructionSource[]
-
-  private program: Function[]
+  private program: Instruction[]
 
   /**
    * When running, I keep track of the number of steps I've preformed in order
@@ -62,11 +60,11 @@ export class Runtime {
   /**
    * I run the given program until completion.
    */
-  public run(program: any[]): Promise<void> {
+  public run(source: any[]): Promise<void> {
     return new Promise((resolve, reject) => {
-      info(`Running program of %d instructions...`, program.length)
+      info(`Running program of %d instructions...`, source.length)
 
-      this.source = program
+      this.program = this.loadProgram(source)
       this.loopCounter = 0
 
       if (process.env['STEP']) {
@@ -98,30 +96,25 @@ export class Runtime {
    */
   public step(): void {
     const no = this.registers.instr.read()
-    const source = this.source[no]
+    const instruction = this.program[no]
 
     //debug(`#step> Raw instruction: IP=%o Op=%o`, no, instruction)
-    info(`Running instruction %d/%d...`, no, this.source.length)
+    info(`Running instruction %d/%d...`, no, this.program.length)
 
-    if (!source) {
+    if (!instruction) {
       info(`Instruction ${no} not found. Halting...`)
       return this.halt()
     }
 
-    const op = this.bindOperation(source.operation)
-    const args = source.arguments
-      .map(argumentSource => {
-        const argument = this.createArgument(argumentSource)
-        this.bindArgument(argument)
-        return argument
-      })
 
-    if (args.length > 0)
-      info(`%s: %o`, source.operation, args.map((a: any) => a.summary))
+    if (instruction.source.arguments.length > 0)
+      info(`%s: %o`,
+        instruction.source.operation,
+        instruction.source.arguments.map((a: any) => a.summary))
     else
-      info(`%s`, source.operation)
+      info(`%s`, instruction.source.operation)
 
-    op(...args)
+    instruction.instruction()
     memoryDebug(`Input=%o`, this.registers.io[0].data)
     memoryDebug(`Output=%o`, this.registers.io[1].data)
     memoryDebug(`Memory=%o`, this.memory)
@@ -131,7 +124,7 @@ export class Runtime {
     debug(`step> Next instruction is %d.`, nextNo)
     this.registers.instr.write(nextNo)
 
-    if (nextNo > this.source.length) {
+    if (nextNo > this.program.length) {
       info(`End of program. Terminated on op #%o.`, no)
       return this.halt()
     }
@@ -141,6 +134,20 @@ export class Runtime {
       info(`Too many ops. Terminated on op #%o.`, no)
       return this.halt()
     }
+  }
+
+  public loadProgram(instructions: InstructionSource[]): Instruction[] {
+    return instructions.map(source => {
+      const op = this.bindOperation(source.operation)
+      const args = source.arguments
+        .map(argumentSource => {
+          const argument = this.createArgument(argumentSource)
+          this.bindArgument(argument)
+          return argument
+        })
+      const instruction = () => { op(...args) }
+      return { instruction, source }
+    })
   }
 
   private bindOperation(operation: string): Function {
