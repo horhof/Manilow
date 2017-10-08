@@ -20,14 +20,6 @@ const debug = Debug('Mel:Parser:Debug')
  * 1. compile-time constants directly in the source code,
  * 2. the data that operations act on,
  * 3. the blocks that organize operations.
- * 
- * |  Type    |  Class   |  Example  | Starts with |
- * | -------- | -------- | --------- | ----------- |
- * | Block    | Block    | `reset`   | Letter      |
- * | Literal  | Literal  | `0d13`    | 0 + letter  |
- * | Address  | Literal  | `&record` | `&`         |
- * | Variable | Variable | `@record` | `@`         |
- * | Pointer  | Pointer  | `*record` | `*`         |
  */
 export enum ArgumentType {
   BLOCK = 'BLOCK',
