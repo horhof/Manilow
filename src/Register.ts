@@ -6,7 +6,8 @@ import { Word, Memory, Channels, Variable, Mutable, Argument } from './Argument'
 import { Runtime } from './Runtime'
 
 export enum Flags {
-  HALT
+  HALT,
+  ZERO
 }
 
 export class Register extends Variable { }

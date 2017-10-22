@@ -67,7 +67,7 @@ export class Runtime {
         process.stdin.on('data', () => {
           if (this.registers.flags.get(Flags.HALT)) {
             info(`Halt in step-by-step mode. Resolving...`)
-            resolve()
+            return resolve()
           }
           else
             this.step()
@@ -78,7 +78,7 @@ export class Runtime {
           this.step()
 
         info(`Halt in automatic mode. Resolving...`)
-        resolve()
+        return resolve()
       }
     })
   }
@@ -110,6 +110,7 @@ export class Runtime {
     memoryDebug(`Input=%o`, this.registers.io.data[0])
     memoryDebug(`Output=%o`, this.registers.io.data[1])
     memoryDebug(`Memory=%o`, this.memory)
+    memoryDebug(`Flags=%O`, this.registers.flags.read())
 
     // Re-read the instruction pointer in case an operation has manipulated it.
     const nextNo = this.registers.instr.read() + 1

@@ -33,8 +33,10 @@ const io = Debug('Mel:I/O')
 export type Word = number
 
 class State {
+  static UNDEFINED = 0xFFFFFFFF
+
   get(address?: number) {
-    return NaN
+    return State.UNDEFINED
   }
 
   set(value: Word, address?: number) {
@@ -76,7 +78,8 @@ export class Channels extends State {
     const value = channel.shift()
 
     if (value == null)
-      throw new Error(`Error: channel was empty at time of access.`)
+      return State.UNDEFINED
+    //throw new Error(`Error: channel was empty at time of access.`)
 
     return value
   }

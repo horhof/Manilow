@@ -8,7 +8,7 @@
 import * as Debug from 'debug'
 
 import { Word, Argument, Literal, Variable, Block } from './Argument'
-import { Flags } from './Register'
+import { Flags, FlagsRegister } from './Register'
 import { Registers } from './Registers'
 
 const log = Debug('Mel:Kernel')
@@ -184,10 +184,22 @@ export class Kernel {
     }
   }
 
+  /**
+   * Accept a binary comparison function and return a function that runs it on
+   * two locations, either setting the zero flag or placing the boolean result
+   * in a third register.
+   */
   private compare(fn: BinaryComparison) {
-    return (a: Literal = this.registers.data, b: Variable = this.registers.accum, c: Variable = this.registers.accum): void => {
-      const result = fn(b.read(), a.read())
-      c.write(Number(result))
+    return (a: Literal = this.registers.data, b: Variable = this.registers.accum, c: Variable = this.registers.flags): void => {
+      const success = fn(b.read(), a.read())
+
+      if (c instanceof FlagsRegister)
+        if (success)
+          c.unset(Flags.ZERO)
+        else
+          c.set(Flags.ZERO)
+      else
+        c.write(Number(success))
     }
   }
 
