@@ -29,7 +29,7 @@ process
 import { Vm } from './Vm'
 const vm = new Vm()
 console.log('Main entry> Running program...')
-vm.run('source.s')
+vm.run('mel-src/source.s')
   .then(() => {
     console.log('Main entry> Exit.')
     process.exit(0)

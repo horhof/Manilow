@@ -3,6 +3,7 @@
   copy: 0d1
 loop:
   double
+  inc: @accum
   dec: @count
   jump zero: end, @count
   jump: loop
