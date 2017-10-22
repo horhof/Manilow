@@ -16,6 +16,8 @@ type UnaryTransform = { (a: Word): Word }
 type BinaryTransform = { (a: Word, b: Word): Word }
 type TernaryTransform = { (a: Word, b: Word, c: Word): Word }
 
+type BinaryComparison = { (a: Word, b: Word): boolean }
+
 interface IsaEntry {
   code: string
   fn: { (...x: Argument[]): void }
@@ -69,10 +71,19 @@ export class Kernel {
     // I/O operations.
     { code: 'in', fn: this.in.bind(this) },
     { code: 'out', fn: this.out.bind(this) },
+    // Comparison.
+    { code: 'eq', fn: this.compare(eq) },
+    { code: 'neq', fn: this.compare(neq) },
+    { code: 'gt', fn: this.compare(gt) },
+    { code: 'gte', fn: this.compare(gte) },
+    { code: 'lt', fn: this.compare(lt) },
+    { code: 'lte', fn: this.compare(lte) },
     // Arithmetic.
+    // - Source and destination.
     { code: 'add', fn: this.applySrcToDest(add) },
     { code: 'sub', fn: this.applySrcToDest(sub) },
     { code: 'mul', fn: this.applySrcToDest(mul) },
+    // - Destination only.
     { code: 'inc', fn: this.applyToDest(increment) },
     { code: 'dec', fn: this.applyToDest(decrement) },
     { code: 'negate', fn: this.applyToDest(negate) },
@@ -169,6 +180,13 @@ export class Kernel {
     return (dest: Variable = this.registers.accum): void => {
       const existing = dest.read()
       dest.write(fn(existing))
+    }
+  }
+
+  private compare(fn: BinaryComparison) {
+    return (a: Literal = this.registers.data, b: Variable = this.registers.accum, c: Variable = this.registers.accum): void => {
+      const result = fn(b.read(), a.read())
+      c.write(Number(result))
     }
   }
 
