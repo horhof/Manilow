@@ -6,7 +6,8 @@ import * as Debug from 'debug'
 
 import { InstructionSource, ArgumentType, ArgumentSource } from './Parser'
 import { Word, Memory, Channels, Argument, Literal, Variable, Pointer, Block } from './Argument'
-import { Registers, Flags } from './Registers'
+import { Flags } from './Register'
+import { Registers } from './Registers'
 import { Kernel } from './Kernel'
 
 const info = Debug('Mel:Runtime')

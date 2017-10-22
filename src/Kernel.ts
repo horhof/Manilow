@@ -8,7 +8,8 @@
 import * as Debug from 'debug'
 
 import { Word, Argument, Literal, Variable, Block } from './Argument'
-import { Registers, Flags } from './Registers'
+import { Flags } from './Register'
+import { Registers } from './Registers'
 
 const log = Debug('Mel:Kernel')
 
