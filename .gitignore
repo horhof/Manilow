@@ -1,4 +1,4 @@
 /node_modules
 /doc
-/*.js
-/*.js.map
+/src/*.js
+/src/*.js.map
