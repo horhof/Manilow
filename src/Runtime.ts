@@ -4,11 +4,13 @@
 
 import * as Debug from 'debug'
 
-import { InstructionSource, ArgumentType, ArgumentSource } from './Parser'
-import { Word, Memory, Channels, Argument, Literal, Variable, Pointer, Block } from './Argument'
-import { Flags } from './Register'
-import { Registers } from './Registers'
+import { Argument } from './Argument'
 import { Kernel } from './Kernel'
+import { InstructionSource, ArgumentType, ArgumentSource } from './Parser'
+import { Literal, Block, Address } from './Literal'
+import { Variable, Pointer } from './Mutable'
+import { Memory } from './State'
+import { Registers, Flags } from './Registers'
 
 const info = Debug('Mel:Runtime')
 const debug = Debug('Mel:Runtime:Debug')
@@ -110,6 +112,7 @@ export class Runtime {
     memoryDebug(`Input=%o`, this.registers.io.data[0])
     memoryDebug(`Output=%o`, this.registers.io.data[1])
     memoryDebug(`Memory=%o`, this.memory)
+    memoryDebug(`Stack=%O`, this.registers.stack.read())
     memoryDebug(`Flags=%O`, this.registers.flags.read())
 
     // Re-read the instruction pointer in case an operation has manipulated it.

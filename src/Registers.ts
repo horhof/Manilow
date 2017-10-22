@@ -4,12 +4,18 @@
 
 import * as Debug from 'debug'
 
-import { Word, Memory, Channels, Variable, Mutable, Argument, Pointer } from './Argument'
-import { Bitfield, Port } from './Register'
+import { Argument } from './Argument'
+import { Bitfield, Pointer, Port, Variable } from './Mutable'
+import { Channels, Memory } from './State'
 import { Runtime } from './Runtime'
 
 const log = Debug('Mel:Registers')
 const io = Debug('Mel:I/O')
+
+export enum Flags {
+  HALT,
+  ZERO
+}
 
 /**
  * I initialize a table of registers from provided memory and I/O. The set of

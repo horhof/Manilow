@@ -7,9 +7,12 @@
 
 import * as Debug from 'debug'
 
-import { Word, Argument, Literal, Variable, Block } from './Argument'
-import { Flags, Bitfield } from './Register'
-import { Registers } from './Registers'
+import { Argument } from './Argument'
+import { Bitfield } from './Mutable'
+import { Literal, Block, Address } from './Literal'
+import { Variable, Pointer } from './Mutable'
+import { Flags, Registers } from './Registers'
+import { Word } from './Word'
 
 const log = Debug('Mel:Kernel')
 

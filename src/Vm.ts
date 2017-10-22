@@ -6,10 +6,11 @@ import * as fs from 'fs'
 import * as Debug from 'debug'
 
 import { Parser } from './Parser'
-import { Word, Memory, Channels } from './Argument'
 import { Kernel } from './Kernel'
 import { Registers } from './Registers'
 import { Runtime } from './Runtime'
+import { Channels, Memory } from './State'
+import { Word } from './Word'
 
 const log = Debug('Mel:Vm')
 
