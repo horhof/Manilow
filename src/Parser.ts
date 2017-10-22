@@ -2,7 +2,7 @@
  * Defines the parser.
  * 
  * Types:
- * - Argument
+ * - ArgumentType
  * - InstructionSource
  * 
  * Classes:
@@ -62,7 +62,7 @@ export interface ArgumentSource {
  * of instructions.
  * 
  * API:
- * - Get program: source = ops
+ * - Get program: source = operations
  */
 export class Parser {
   /**
@@ -161,7 +161,7 @@ export class Parser {
     this.variables = JSON.parse(JSON.stringify(registers.map))
   }
 
-  public getProgram(source: string) {
+  getProgram(source: string) {
     //debug(`#getProgram>`)
     this.blocks = {}
 

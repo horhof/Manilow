@@ -39,7 +39,7 @@ export class Vm {
     this.initComponents()
   }
 
-  public run(filename: string): Promise<void> {
+  run(filename: string): Promise<void> {
     log(`Machine start.`)
     const program = this.loadProgram(filename)
 

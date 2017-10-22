@@ -1,6 +1,9 @@
 /**
- * Defines the registers.
+ * Defines classes for the machine's registers.
  *
+ * Types:
+ * - Flags
+ * 
  * Classes:
  * - Registers
  */
@@ -24,19 +27,19 @@ class Register extends Variable { }
  * and write to the channel's queue.
  */
 export class Port extends Mutable {
-  public read(): Word {
+  get summary(): string {
+    return `Port ${this.address} ( = ${this.read()})`
+  }
+
+  read(): Word {
     const value = this.state.get(this.address)
     io('IN %O', value)
     return value
   }
 
-  public write(value: Word): void {
+  write(value: Word): void {
     io('OUT %O', value)
     this.state.set(this.address, value)
-  }
-
-  public get summary(): string {
-    return `Port ${this.address} ( = ${this.read()})`
   }
 }
 
@@ -53,25 +56,25 @@ class FlagsRegister extends Variable {
   static NUM_FLAGS = 1
 
   /** Return the given flag as a boolean. */
-  public get(bit: number): boolean {
+  get(bit: number): boolean {
     //log(`#get> Bit=%d`, bit)
     return Boolean(this.read() | bit)
   }
 
-  public set(bit: number): void {
+  set(bit: number): void {
     //log(`#set> Bit=%d`, bit)
     if (!this.get(bit))
       this.toggle(bit)
   }
 
-  public unset(bit: number): void {
+  unset(bit: number): void {
     //log(`#unset> Bit=%d`, bit)
     if (this.get(bit))
       this.toggle(bit)
   }
 
   /** Flip the bit for the given flag. */
-  public toggle(bitNo: number): void {
+  toggle(bitNo: number): void {
     //log(`#toggle> BitNo=%d`, bitNo)
     const bit = 1 << bitNo
     const old = this.read()
@@ -91,29 +94,29 @@ export class Registers {
   static NUM_REGISTERS = 11
 
   /** Accumulator. */
-  public accum: Register
+  accum: Register
 
   /** Data. */
-  public data: Register
+  data: Register
 
   /** Status flags. */
-  public flags: FlagsRegister
+  flags: FlagsRegister
 
-  public input: Port
+  input: Port
 
-  public output: Port
+  output: Port
 
   /** Instruction pointer. */
-  public instr: Register
+  instr: Register
 
   /** Stack pointer. */
-  public stack: Register
+  stack: Register
 
-  public map: { [label: string]: number }
+  map: { [label: string]: number }
 
-  public memory: Memory
+  memory: Memory
 
-  public io: Channels
+  io: Channels
 
   constructor(memory: Memory, io: Channels) {
     this.memory = memory

@@ -4,18 +4,14 @@
  *
  * Types:
  * - Word
- * - Label
- * - ArgType
  * 
  * Classes:
  * 
  * Holding state:
- * 
  * - Memory
  * - Channel
  * 
  * Addressing state:
- * 
  * - Argument
  * - Constant
  * - Variable
@@ -23,7 +19,6 @@
  * - Port
  * 
  * Addressing instructions:
- * 
  * - Block
  */
 

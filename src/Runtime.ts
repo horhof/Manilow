@@ -54,7 +54,7 @@ export class Runtime {
   }
 
   /** I run the given program until completion. */
-  public run(source: InstructionSource[]): Promise<void> {
+  run(source: InstructionSource[]): Promise<void> {
     return new Promise((resolve, reject) => {
       info(`Running program of %d instructions...`, source.length)
 
@@ -86,7 +86,7 @@ export class Runtime {
    * I read the instruction pointer, grab that instruction from the program,
    * execute it, increment the instruction pointer, and loop.
    */
-  public step(): void {
+  step(): void {
     const no = this.registers.instr.read()
     const { lambda, op, args } = this.program[no]
 
@@ -127,7 +127,7 @@ export class Runtime {
     }
   }
 
-  public loadProgram(instructions: InstructionSource[]): Instruction[] {
+  loadProgram(instructions: InstructionSource[]): Instruction[] {
     return instructions.map(source => {
       const fn = this.bindOperation(source.operation)
       const args = <Argument[]>source.arguments

@@ -1,9 +1,6 @@
 /**
  * Defines the kernel.
  *
- * Types:
- * - IsaEntry
- *
  * Classes:
  * - Kernel
  */
@@ -19,7 +16,7 @@ type UnaryTransform = { (a: Word): Word }
 type BinaryTransform = { (a: Word, b: Word): Word }
 type TernaryTransform = { (a: Word, b: Word, c: Word): Word }
 
-export interface IsaEntry {
+interface IsaEntry {
   code: string
   fn: { (...x: Argument[]): void }
 }
@@ -60,7 +57,7 @@ function lte(a: Word, b: Word): boolean { return a < b }
  * - Lookup code: op code = ISA entry
  */
 export class Kernel {
-  public registers: Registers
+  registers: Registers
 
   private isa: IsaEntry[] = [
     // Interpreter / loop.
@@ -92,7 +89,7 @@ export class Kernel {
     this.registers = registers
   }
 
-  public lookupOp(code: string): IsaEntry | void {
+  lookupOp(code: string): IsaEntry | void {
     return this.isa.find(entry => entry.code === code)
   }
 
