@@ -4,8 +4,8 @@
 
 import * as Debug from 'debug'
 
-import { Word, Memory, Channels, Variable, Mutable, Argument } from './Argument'
-import { Register, FlagsRegister, Port } from './Register'
+import { Word, Memory, Channels, Variable, Mutable, Argument, Pointer } from './Argument'
+import { Bitfield, Port } from './Register'
 import { Runtime } from './Runtime'
 
 const log = Debug('Mel:Registers')
@@ -32,23 +32,23 @@ export class Registers {
   static NUM_REGISTERS = 11
 
   /** Accumulator. */
-  accum: Register
+  accum: Variable
 
   /** Data. */
-  data: Register
+  data: Variable
 
   /** Status flags. */
-  flags: FlagsRegister
+  flags: Bitfield
 
   input: Port
 
   output: Port
 
   /** Instruction pointer. */
-  instr: Register
+  instr: Variable
 
   /** Stack pointer. */
-  stack: Register
+  stack: Pointer
 
   map: { [label: string]: number }
 
@@ -65,11 +65,12 @@ export class Registers {
     let address = 0
     this.accum = this.initRegister('accum', address++)
     this.data = this.initRegister('data', address++)
-    this.instr = this.initRegister('instr', address++)
-    this.stack = this.initRegister('stack', address++)
+
+    this.instr = this.initPointer('instr', address++)
+    this.stack = this.initPointer('stack', address++)
 
     this.instr.write(Runtime.STARTING_INSTRUCTION)
-    this.flags = new FlagsRegister(address++, this.memory)
+    this.flags = new Bitfield(address++, this.memory)
     this.map['instr'] = address
 
     address = 0
@@ -80,8 +81,14 @@ export class Registers {
   /**
    * The rest are initialized as data addresses tied to memory.
    */
-  private initRegister(label: string, address: number): Register {
-    const register = new Register(address, this.memory)
+  private initRegister(label: string, address: number): Variable {
+    const register = new Variable(address, this.memory)
+    this.map[label] = address
+    return register
+  }
+
+  private initPointer(label: string, address: number): Pointer {
+    const register = new Pointer(address, this.memory)
     this.map[label] = address
     return register
   }

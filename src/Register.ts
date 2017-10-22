@@ -10,8 +10,6 @@ export enum Flags {
   ZERO
 }
 
-export class Register extends Variable { }
-
 /**
  * I represent a set of status flags held in the "flags" register.
  * 
@@ -21,7 +19,7 @@ export class Register extends Variable { }
  * - Unset: flag.
  * - Toggle: flag.
  */
-export class FlagsRegister extends Variable {
+export class Bitfield extends Variable {
   static NUM_FLAGS = 1
 
   /** Return the given flag as a boolean. */
