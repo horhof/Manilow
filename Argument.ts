@@ -38,41 +38,41 @@ const io = Debug('Mel:I/O')
 export type Word = number
 
 class State {
-  public get(address?: number): Word {
+  get(address?: number) {
     return NaN
   }
 
-  public set(value: Word, address?: number): void {
+  set(value: Word, address?: number) {
     //
   }
 }
 
 export class Memory extends State {
-  public data: Word[]
+  data: Word[]
 
   constructor(data: Word[] = []) {
     super()
     this.data = data
   }
 
-  public get(address: number): Word {
+  get(address: number) {
     return this.data[address]
   }
 
-  public set(address: number, value: Word): void {
+  set(address: number, value: Word) {
     this.data[address] = value
   }
 }
 
 export class Channels extends State {
-  public data: Word[][]
+  data: Word[][]
 
   constructor(data: Word[][] = [[]]) {
     super()
     this.data = data
   }
 
-  public get(address: number): Word {
+  get(address: number) {
     const channel = this.data[address]
 
     if (channel == null)
@@ -86,7 +86,7 @@ export class Channels extends State {
     return value
   }
 
-  public set(address: number, value: Word): void {
+  set(address: number, value: Word) {
     const channel = this.data[address]
 
     if (channel == null)
@@ -116,7 +116,7 @@ export class Argument {
     this.data = data || Argument.ZERO
   }
 
-  public read(): Word {
+  read() {
     return this.data
   }
 }
@@ -127,12 +127,16 @@ export class Argument {
  * state. I disallow write operations.
  */
 export class Literal extends Argument {
-  public get summary(): string {
+  get summary() {
     return `Literal ${this.data}`
   }
 }
 
 export class Mutable extends Argument {
+  get address() {
+    return this.data
+  }
+
   /**
    * Memory is used for addresses/pointers but not for immediate values.
    */
@@ -143,16 +147,12 @@ export class Mutable extends Argument {
     this.state = state
   }
 
-  public read(): Word {
+  read() {
     return this.state.get(this.address)
   }
 
-  public write(value: Word): void {
+  write(value: Word) {
     return this.state.set(this.address, value)
-  }
-
-  public get address(): number {
-    return this.data
   }
 }
 
@@ -161,13 +161,13 @@ export class Mutable extends Argument {
  * like these when doing jumps.
  */
 export class Block extends Literal {
-  public get summary(): string {
+  get summary() {
     return `Block ${this.data}`
   }
 }
 
 export class Address extends Literal {
-  public get summary(): string {
+  get summary() {
     return `Address ${this.data}`
   }
 }
@@ -178,7 +178,7 @@ export class Address extends Literal {
  * operations mutate that state.
  */
 export class Variable extends Mutable {
-  public get summary(): string {
+  get summary() {
     return `Variable ${this.address} (value is ${this.read()})`
   }
 }
@@ -189,11 +189,11 @@ export class Variable extends Mutable {
  * address and do a second memory access to get it.
  */
 export class Pointer extends Variable {
-  public get address(): number {
+  get address() {
     return this.state.get(this.data)
   }
 
-  public get summary(): string {
+  get summary() {
     return `Pointer ${this.data} (address is ${this.address}, value is ${this.read()})`
   }
 }

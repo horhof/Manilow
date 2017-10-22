@@ -91,6 +91,6 @@ export class Vm {
     this.interpreter = new Runtime(this.registers, this.memory, this.kernel)
 
     log(`Initializing parser...`)
-    this.parser = new Parser()
+    this.parser = new Parser(this.registers)
   }
 }
