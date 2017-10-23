@@ -5,15 +5,7 @@
 
 // Provide defaults for debugging if not defined.
 process.env['DEBUG'] = process.env['DEBUG'] || [
-  'Mel:Argument',
-  'Mel:Vm',
-  'Mel:Kernel',
-  'Mel:Registers',
-  'Mel:Parser:*',
-  'Mel:Memory',
-  'Mel:Runtime',
-  'Mel:Runtime:Debug',
-  'Mel:I/O'
+  'Mel:*',
 ].join(',')
 console.log('Main entry> DEBUG=', process.env['DEBUG'])
 

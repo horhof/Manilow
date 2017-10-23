@@ -10,7 +10,7 @@
 import { Word } from './Word'
 
 export abstract class State {
-  static UNDEFINED = 0xFFFFFFFF
+  static UNDEFINED = NaN
 
   get(address?: number) {
     return State.UNDEFINED
@@ -45,6 +45,8 @@ export class Channels extends State {
 }
 
 export class Memory extends State {
+  static STACK_SEGMENT = 50
+
   data: Word[]
 
   constructor(data: Word[] = []) {

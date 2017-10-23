@@ -11,7 +11,7 @@ import { Argument } from './Argument'
 import { Bitfield } from './Mutable'
 import { Literal, Block, Address } from './Literal'
 import { Variable, Pointer } from './Mutable'
-import { Flags, Registers } from './Registers'
+import { Flags, AddressBus } from './AddressBus'
 import { Word } from './Word'
 
 const log = Debug('Mel:Kernel')
@@ -63,7 +63,7 @@ function lte(a: Word, b: Word): boolean { return a < b }
  * - Lookup code: op code = ISA entry
  */
 export class Kernel {
-  registers: Registers
+  registers: AddressBus
 
   private isa: IsaEntry[] = [
     // Interpreter / loop.
@@ -94,13 +94,19 @@ export class Kernel {
     { code: 'double', fn: this.applyToDest(double) },
     { code: 'square', fn: this.applyToDest(square) },
     { code: 'sqrt', fn: this.applyToDest(sqrt) },
+    // Stack.
+    { code: 'push', fn: this.push.bind(this) },
+    { code: 'pop', fn: this.pop.bind(this) },
     // Jumps.
     { code: 'jump', fn: this.jump.bind(this) },
-    { code: 'jump zero', fn: this.jumpIf(zero) },
-    { code: 'jump nonzero', fn: this.jumpIf(nonZero) },
+    { code: 'jumz', fn: this.jumpIf(zero) },
+    { code: 'junz', fn: this.jumpIf(nonZero) },
+    // Subroutines.
+    { code: 'call', fn: this.call.bind(this) },
+    { code: 'return', fn: this.return.bind(this) },
   ]
 
-  constructor(registers: Registers) {
+  constructor(registers: AddressBus) {
     this.registers = registers
   }
 
@@ -196,7 +202,7 @@ export class Kernel {
     return (a: Literal = this.registers.data, b: Variable = this.registers.accum, c: Variable = this.registers.flags): void => {
       const success = fn(b.read(), a.read())
 
-      if (c instanceof FlagsRegister)
+      if (c instanceof Bitfield)
         if (success)
           c.unset(Flags.ZERO)
         else
@@ -204,6 +210,55 @@ export class Kernel {
       else
         c.write(Number(success))
     }
+  }
+
+  private push(src: Literal = this.registers.accum, stack = this.registers.stack): void {
+    stack.write(src.read())
+    stack.address += 1
+  }
+
+  /**
+   * I remove the value from the tip of the stack, placing it in either a
+   * register or throwing it away.
+   * 
+   * @param dest If null, the value is discarded. If undefined, the value is
+   * placed in the accumulator.
+   */
+  private pop(dest: Variable | null = this.registers.accum): Word {
+    this.registers.stack.address -= 1
+    const tip = this.registers.stack.read()
+
+    if (dest !== null) {
+      log(`pop> Writing stack value to destination...`)
+      dest.write(tip)
+    }
+
+    return tip
+  }
+
+  private call(dest: Literal): void {
+    log(`call> Dest=%o`, dest)
+    const returnAddr = this.registers.instr.read()
+    log(`call> Saving return address. Addr=%o Instr=%o`, returnAddr, this.registers.instr.dump())
+    this.push(new Literal(returnAddr + 1))
+    this.jump(dest)
+  }
+
+  private return(returnValue: Literal | Variable | null = this.registers.accum): void {
+    log(`return> ReturnValue=%o`, returnValue)
+    // Save and remove the return address which must be on the tip of the stack.
+    const address = this.pop(null)
+    const returnAddr = new Literal(address)
+    log(`return> Addr=%o ReturnAddr=%o`, address, returnAddr)
+
+    if (returnValue !== null) {
+      log(`return> Pushing return value to stack...`)
+      this.push(returnValue)
+    }
+    else
+      log(`return> No value to return.`)
+
+    this.jump(returnAddr)
   }
 
   /**

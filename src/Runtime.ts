@@ -10,7 +10,7 @@ import { InstructionSource, ArgumentType, ArgumentSource } from './Parser'
 import { Literal, Block, Address } from './Literal'
 import { Variable, Pointer } from './Mutable'
 import { Memory } from './State'
-import { Registers, Flags } from './Registers'
+import { AddressBus, Flags } from './AddressBus'
 
 const info = Debug('Mel:Runtime')
 const debug = Debug('Mel:Runtime:Debug')
@@ -39,7 +39,7 @@ export class Runtime {
 
   static STARTING_INSTRUCTION = 0
 
-  private registers: Registers
+  private registers: AddressBus
 
   private memory: Memory
 
@@ -50,7 +50,7 @@ export class Runtime {
   /** I track the steps to enforce a maximum number of operations. */
   private steps: number
 
-  constructor(registers: Registers, memory: Memory, kernel: Kernel) {
+  constructor(registers: AddressBus, memory: Memory, kernel: Kernel) {
     this.registers = registers
     this.memory = memory
     this.kernel = kernel
@@ -63,6 +63,9 @@ export class Runtime {
 
       this.program = this.loadProgram(source)
       this.steps = 0
+
+      this.dumpState()
+      this.dumpRegisters()
 
       if (process.env['STEP']) {
         info(`Running program in step-by-step mode. Press enter to step forward.`)
@@ -90,6 +93,7 @@ export class Runtime {
    * execute it, increment the instruction pointer, and loop.
    */
   step(): void {
+    debug(`step> Begin.`)
     const no = this.registers.instr.read()
     const { lambda, op, args } = this.program[no]
 
@@ -109,18 +113,16 @@ export class Runtime {
       info(`%s`, op)
 
     lambda()
-    memoryDebug(`Input=%o`, this.registers.io.data[0])
-    memoryDebug(`Output=%o`, this.registers.io.data[1])
-    memoryDebug(`Memory=%o`, this.memory)
-    memoryDebug(`Stack=%O`, this.registers.stack.read())
-    memoryDebug(`Flags=%O`, this.registers.flags.read())
+
+    this.dumpState()
+    this.dumpRegisters()
 
     // Re-read the instruction pointer in case an operation has manipulated it.
     const nextNo = this.registers.instr.read() + 1
-    debug(`step> Next instruction is %d.`, nextNo)
+    debug(`step> Moving from instruction %d to %d.`, no, nextNo)
     this.registers.instr.write(nextNo)
 
-    if (nextNo > this.program.length) {
+    if (nextNo >= this.program.length) {
       info(`End of program. Terminated on op #%o.`, no)
       return this.halt()
     }
@@ -158,20 +160,15 @@ export class Runtime {
 
     switch (argumentSource.type) {
       case ArgumentType.BLOCK:
-        debug(`bindArgument> Block %o.`, content)
         return new Block(content)
       case ArgumentType.LITERAL:
-        debug(`bindArgument> Literal %o.`, content)
         return new Literal(content)
       case ArgumentType.ADDRESS:
-        debug(`bindArgument> Address %o.`, content)
         return new Literal(content)
       case ArgumentType.VARIABLE:
-        debug(`bindArgument> Variable %o.`, content)
-        return new Variable(content, this.memory)
+        return new Variable('UserVar', content, this.memory)
       case ArgumentType.POINTER:
-        debug(`bindArgument> Pointer %o.`, content)
-        return new Pointer(content, this.memory)
+        return new Pointer('UserPtr', content, this.memory)
       default:
         throw new Error(`Error: can't identify argument type "${argumentSource.type}".`)
     }
@@ -180,5 +177,31 @@ export class Runtime {
   /** Set the halt flag. The runtime halts on the next step. */
   private halt(): void {
     this.registers.flags.set(Flags.HALT)
+  }
+
+  private dumpState(): void {
+    //memoryDebug(`Input=%o`, this.registers.io.data[0])
+    //memoryDebug(`Output=%o`, this.registers.io.data[1])
+    memoryDebug(`Memory=%o`, this.memory)
+  }
+
+  private dumpRegisters(): void {
+    this.dumpRegister(this.registers.accum)
+    this.dumpRegister(this.registers.data)
+    //this.dumpRegister(this.registers.instr)
+    this.dumpRegister(this.registers.stack)
+    this.dumpRegister(this.registers.flags)
+    this.dumpRegister(this.registers.input)
+    this.dumpRegister(this.registers.output)
+
+    this.registers.anon.forEach(reg => {
+      this.dumpRegister(reg)
+    })
+  }
+
+  private dumpRegister(register: Variable): void {
+    const dump = register.dump()
+    memoryDebug(`Dump %O`, dump)
+    //memoryDebug(`Reg=%o Addr=%o Data=%o Read=%o`, label, address, data, read)
   }
 }

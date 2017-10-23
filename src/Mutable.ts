@@ -18,20 +18,34 @@ import { State } from './State'
 import { Word } from './Word'
 
 abstract class Mutable extends Argument {
-  protected data: number
-
   get address() {
     return this.data
   }
 
+  data: number
+
+  label: string
+
   /**
-   * Memory is used for addresses/pointers but not for immediate values.
+   * Mutable arguments must be backed by some provider of state, which Literal
+   * values don't have.
    */
   protected state: State
 
-  constructor(data: number, state: State) {
+  constructor(label: string, data: number, state: State) {
     super(data)
+    this.label = label
     this.state = state
+  }
+
+  dump() {
+    return {
+      //str: `Reg=%o Addr=%o Data=%o Read=%o`,
+      label: this.label,
+      address: this.address,
+      data: this.data,
+      read: this.read()
+    }
   }
 
   read() {
@@ -41,6 +55,30 @@ abstract class Mutable extends Argument {
   write(value: Word) {
     return this.state.set(this.address, value)
   }
+
+  get(bitNo: number): boolean {
+    return Boolean(this.read() | bitNo)
+  }
+
+  set(bitNo: number): void {
+    if (this.get(bitNo))
+      return
+
+    this.toggle(bitNo)
+  }
+
+  unset(bitNo: number): void {
+    if (!this.get(bitNo))
+      return
+
+    this.toggle(bitNo)
+  }
+
+  toggle(bitNo: number): void {
+    const bit = 1 << bitNo
+    const old = this.read()
+    this.write(old ^ bit)
+  }
 }
 
 /**
@@ -49,7 +87,7 @@ abstract class Mutable extends Argument {
  */
 export class Variable extends Mutable {
   get summary() {
-    return `Variable ${this.address} (value is ${this.read()})`
+    return `val ${this.read()} (addr ${this.address})`
   }
 }
 
@@ -59,23 +97,22 @@ export class Variable extends Mutable {
  */
 export class Port extends Mutable {
   get summary(): string {
-    return `Port ${this.address} ( = ${this.read()})`
+    return `${this.read()} (:${this.address})`
   }
 
   read(): Word {
     const value = this.state.get(this.address)
-    io('IN %O', value)
     return value
   }
 
   write(value: Word): void {
-    io('OUT %O', value)
     this.state.set(this.address, value)
   }
 }
 
 /**
- * I represent a set of status flags held in the "flags" register.
+ * I represent a set of flags held in a register and used as individual bits by
+ * the machine.
  * 
  * API:
  * - Get?: flag
@@ -84,32 +121,9 @@ export class Port extends Mutable {
  * - Toggle: flag.
  */
 export class Bitfield extends Variable {
-  static NUM_FLAGS = 1
-
-  /** Return the given flag as a boolean. */
-  get(bit: number): boolean {
-    //log(`#get> Bit=%d`, bit)
-    return Boolean(this.read() | bit)
-  }
-
-  set(bit: number): void {
-    //log(`#set> Bit=%d`, bit)
-    if (!this.get(bit))
-      this.toggle(bit)
-  }
-
-  unset(bit: number): void {
-    //log(`#unset> Bit=%d`, bit)
-    if (this.get(bit))
-      this.toggle(bit)
-  }
-
-  /** Flip the bit for the given flag. */
-  toggle(bitNo: number): void {
-    //log(`#toggle> BitNo=%d`, bitNo)
-    const bit = 1 << bitNo
-    const old = this.read()
-    this.write(old ^ bit)
+  get summary(): string {
+    let bits = this.read().toString(2)
+    return `val b${bits} (addr ${this.address})`
   }
 }
 
@@ -117,19 +131,31 @@ export class Bitfield extends Variable {
  * I am an operand pointing to a memory address but the value at that address
  * is not directly use. Instead operations will use the value as another
  * address and do a second memory access to get it.
+ * 
+ * The internal data is the location of the pointer whose value is the pointed
+ * address. Read and write will use the dereferenced value.
+ * 
+ * | Interface | Meaning                 |
+ * | :-------: | --------------------    |
+ * | `data`    | True address of pointer |
+ * | `address` | Address of value        |
+ * | `read()`  | Pointed value           |
+ * | `write()` | Change pointed value    |
  */
 export class Pointer extends Variable {
+  /** The address is read from memory. */
   get address() {
     return this.state.get(this.data)
   }
 
+  /** Change the address being pointed to. E.g. the stack pointer. */
   set address(newAddress: number) {
     const previousAddress = this.address
     log(`[Pointer] set address> Previous=%d New=%d`, previousAddress, newAddress)
-    this.state.set(this.address, newAddress)
+    this.state.set(this.data, newAddress)
   }
 
   get summary() {
-    return `Pointer ${this.data} (address is ${this.address}, value is ${this.read()})`
+    return `val ${this.read()} (val addr ${this.address}, ptr addr ${this.data})`
   }
 }

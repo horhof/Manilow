@@ -1,3 +1,5 @@
+import { Word } from './Word'
+
 /**
  * I am an abstract class representing an entity capable of being an argument
  * of an operation. Arguments always wrap some kind of value and control the
@@ -12,13 +14,19 @@ export abstract class Argument {
    */
   protected readonly data: number
 
-  static ZERO = 0
-
-  constructor(data: number) {
-    this.data = data || Argument.ZERO
+  get address(): number {
+    return Argument.UNDEFINED
   }
 
-  read() {
+  static UNDEFINED = NaN
+
+  constructor(data: number) {
+    this.data = (data != null)
+      ? data
+      : Argument.UNDEFINED
+  }
+
+  read(): Word {
     return this.data
   }
 }

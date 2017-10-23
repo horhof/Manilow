@@ -1,5 +1,5 @@
 /**
- * Defines the machine's registers.
+ * Defines the machine's registers and I/O.
  */
 
 import * as Debug from 'debug'
@@ -34,8 +34,14 @@ export enum Flags {
  * - Memory
  * - Io
  */
-export class Registers {
-  static NUM_REGISTERS = 11
+export class AddressBus {
+  static get NUM_REGISTERS(): number {
+    return AddressBus.NUM_NAMED_REGS + AddressBus.NUM_UNNAMED_REGS
+  }
+
+  static NUM_NAMED_REGS = 8
+
+  static NUM_UNNAMED_REGS = 10
 
   /** Accumulator. */
   accum: Variable
@@ -46,15 +52,21 @@ export class Registers {
   /** Status flags. */
   flags: Bitfield
 
-  input: Port
-
-  output: Port
-
   /** Instruction pointer. */
   instr: Variable
 
   /** Stack pointer. */
   stack: Pointer
+
+  /** Stack base pointer. */
+  base: Pointer
+
+  input: Port
+
+  output: Port
+
+  /** General purpose registers. */
+  anon: Variable[]
 
   map: { [label: string]: number }
 
@@ -72,13 +84,25 @@ export class Registers {
     this.accum = this.initRegister('accum', address++)
     this.data = this.initRegister('data', address++)
 
-    this.instr = this.initPointer('instr', address++)
-    this.stack = this.initPointer('stack', address++)
+    this.flags = new Bitfield('flags', address++, this.memory)
+    this.map['flags'] = address
 
-    this.instr.write(Runtime.STARTING_INSTRUCTION)
-    this.flags = new Bitfield(address++, this.memory)
+    this.instr = this.initRegister('instr', address++)
     this.map['instr'] = address
 
+    this.stack = this.initPointer('stack', address++)
+    this.stack.address = Memory.STACK_SEGMENT
+
+    this.base = this.initPointer('base', address++)
+
+    this.anon = []
+    log(`Initializing general purpose registers...`)
+    Array(10).fill(0).forEach((_, i) => {
+      this.anon[i] = this.initRegister(`r${i}`, address + i)
+    })
+
+    // Ports point to addresses not in memory but in I/O channels and have
+    // addresses starting from zero.
     address = 0
     this.input = this.initPort('input', address++)
     this.output = this.initPort('output', address++)
@@ -88,13 +112,17 @@ export class Registers {
    * The rest are initialized as data addresses tied to memory.
    */
   private initRegister(label: string, address: number): Variable {
-    const register = new Variable(address, this.memory)
+    log(`initRegister> Initializing %s at address %d...`, label, address)
+    const register = new Variable(label, address, this.memory)
+    log(`initRegister> Register=%O`, register.dump())
     this.map[label] = address
     return register
   }
 
   private initPointer(label: string, address: number): Pointer {
-    const register = new Pointer(address, this.memory)
+    log(`initPointer> Initializing %s at address %d...`, label, address)
+    const register = new Pointer(label, address, this.memory)
+    log(`initPointer> Register=%O`, register.dump())
     this.map[label] = address
     return register
   }
@@ -104,7 +132,7 @@ export class Registers {
    * channels.
    */
   private initPort(label: string, address: number): Port {
-    const port = new Port(address, this.io)
+    const port = new Port(label, address, this.io)
     this.map[label] = address
     return port
   }

@@ -11,7 +11,7 @@
 
 import * as Debug from 'debug'
 
-import { Registers } from './Registers'
+import { AddressBus } from './AddressBus'
 
 const info = Debug('Mel:Parser:Info')
 const debug = Debug('Mel:Parser:Debug')
@@ -109,13 +109,13 @@ export class Parser {
    * Introduce comments.
    * 
    * ```asm
-   * halt  # End program.
-   * #     ^
+   * halt;  End program.
+   * #   ^
    * ```
    */
-  static COMMENT_PREFIX = `#`
+  static COMMENT_PREFIX = `;`
 
-  static BLOCK_PATTERN = /^[a-z]/
+  static BLOCK_PATTERN = /^[a-z]/i
 
   static LITERAL_PATTERN = /^0[a-z]/
 
@@ -157,8 +157,9 @@ export class Parser {
     { code: 'define', fn: this.define.bind(this) },
   ]
 
-  constructor(registers: Registers) {
+  constructor(registers: AddressBus) {
     this.variables = JSON.parse(JSON.stringify(registers.map))
+    debug(`new> Variables=%O`, this.variables)
   }
 
   getProgram(source: string) {
