@@ -1,0 +1,15 @@
+```x86asm
+  DEF 0d100, &studentName
+  GOTO ProgramStart
+
+Subroutine:          ; The start of something.
+  MUL 0d10.          ; Multiply accumulator value.
+  DIV &studentName
+  EXIT @accum
+
+ProgramStart:
+  COPY 0d500        ; Put 500 into the accumulator.
+  ENTER Subroutine
+  ENTER Subroutine
+  HALT
+  ```

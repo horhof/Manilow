@@ -67,43 +67,43 @@ export class Kernel {
 
   private isa: IsaEntry[] = [
     // Interpreter / loop.
-    { code: 'noop', fn: () => undefined },
-    { code: 'halt', fn: () => { this.registers.flags.set(Flags.HALT) } },
+    { code: 'NOOP', fn: () => undefined },
+    { code: 'HALT', fn: () => { this.registers.flags.set(Flags.HALT) } },
     // Data manipulation.
-    { code: 'copy', fn: this.copy.bind(this) },
-    { code: 'zero', fn: this.zero.bind(this) },
+    { code: 'COPY', fn: this.copy.bind(this) },
+    { code: 'ZERO', fn: this.zero.bind(this) },
     // I/O operations.
-    { code: 'in', fn: this.in.bind(this) },
-    { code: 'out', fn: this.out.bind(this) },
+    { code: 'IN', fn: this.in.bind(this) },
+    { code: 'OUT', fn: this.out.bind(this) },
     // Comparison.
-    { code: 'eq', fn: this.compare(eq) },
-    { code: 'neq', fn: this.compare(neq) },
-    { code: 'gt', fn: this.compare(gt) },
-    { code: 'gte', fn: this.compare(gte) },
-    { code: 'lt', fn: this.compare(lt) },
-    { code: 'lte', fn: this.compare(lte) },
+    { code: 'EQ', fn: this.compare(eq) },
+    { code: 'NEQ', fn: this.compare(neq) },
+    { code: 'GT', fn: this.compare(gt) },
+    { code: 'GTE', fn: this.compare(gte) },
+    { code: 'LT', fn: this.compare(lt) },
+    { code: 'LTE', fn: this.compare(lte) },
     // Arithmetic.
     // - Source and destination.
-    { code: 'add', fn: this.applySrcToDest(add) },
-    { code: 'sub', fn: this.applySrcToDest(sub) },
-    { code: 'mul', fn: this.applySrcToDest(mul) },
+    { code: 'ADD', fn: this.applySrcToDest(add) },
+    { code: 'SUB', fn: this.applySrcToDest(sub) },
+    { code: 'MUL', fn: this.applySrcToDest(mul) },
     // - Destination only.
-    { code: 'inc', fn: this.applyToDest(increment) },
-    { code: 'dec', fn: this.applyToDest(decrement) },
-    { code: 'negate', fn: this.applyToDest(negate) },
-    { code: 'double', fn: this.applyToDest(double) },
-    { code: 'square', fn: this.applyToDest(square) },
-    { code: 'sqrt', fn: this.applyToDest(sqrt) },
+    { code: 'INC', fn: this.applyToDest(increment) },
+    { code: 'DEC', fn: this.applyToDest(decrement) },
+    { code: 'NEG', fn: this.applyToDest(negate) },
+    { code: 'DBL', fn: this.applyToDest(double) },
+    { code: 'SQ', fn: this.applyToDest(square) },
+    { code: 'SQRT', fn: this.applyToDest(sqrt) },
     // Stack.
-    { code: 'push', fn: this.push.bind(this) },
-    { code: 'pop', fn: this.pop.bind(this) },
+    { code: 'PUSH', fn: this.push.bind(this) },
+    { code: 'POP', fn: this.pop.bind(this) },
     // Jumps.
-    { code: 'jump', fn: this.jump.bind(this) },
-    { code: 'jumz', fn: this.jumpIf(zero) },
-    { code: 'junz', fn: this.jumpIf(nonZero) },
+    { code: 'GOTO', fn: this.jump.bind(this) },
+    { code: 'IF', fn: this.jumpIf(zero) },
+    { code: 'ELSE', fn: this.jumpIf(nonZero) },
     // Subroutines.
-    { code: 'call', fn: this.call.bind(this) },
-    { code: 'return', fn: this.return.bind(this) },
+    { code: 'ENTER', fn: this.call.bind(this) },
+    { code: 'EXIT', fn: this.return.bind(this) },
   ]
 
   constructor(registers: AddressBus) {
@@ -116,10 +116,6 @@ export class Kernel {
 
   /**
    * I write to a destination, from either a source word or an immediate value.
-   * 
-   * - Copy. (Copy data to accum)
-   * - Copy: a. (Copy a to accum)
-   * - Copy: a, b. (Copy a to b)
    * 
    * @param src Source value or address. Defaults to data.
    * @param dest Destination address. Defaults to accum.
@@ -141,9 +137,6 @@ export class Kernel {
    * I read from the input channel and place the result into the destination
    * address.
    * 
-   * - Input. (Read data into accum)
-   * - Input: a. (Read data into a)
-   * 
    * @param dest Destination address. Defaults to accum.
    */
   private in(dest: Variable = this.registers.accum): void {
@@ -162,10 +155,6 @@ export class Kernel {
   /**
    * Accept a binary function and return a function with a src/dest pattern.
    * 
-   * - Apply src to dest. (Call fn with accum, data)
-   * - Apply src to dest: a. (Call fn with accum, a)
-   * - Apply src to dest: a, b. (Call fn with a, b)
-   * 
    * The source is used as A, the existing destination as B. The result of the
    * binary operation is put back into the destination.
    * 
@@ -173,8 +162,8 @@ export class Kernel {
    * immediate value.
    */
   private applySrcToDest(fn: BinaryTransform) {
-    return (src: Literal = this.registers.data, dest: Variable = this.registers.accum): void => {
-      const result = fn(dest.read(), src.read())
+    return (a: Literal = this.registers.data, b: Variable = this.registers.accum, dest: Variable = this.registers.accum): void => {
+      const result = fn(b.read(), a.read())
       dest.write(result)
     }
   }
@@ -182,9 +171,6 @@ export class Kernel {
   /**
    * Accept a unary function and return a function that runs it on a
    * destination, replacing it in the process.
-   * 
-   * - Apply src to dest. (Call fn with accum)
-   * - Apply src to dest: a. (Call fn with a)
    */
   private applyToDest(fn: UnaryTransform) {
     return (dest: Variable = this.registers.accum): void => {

@@ -69,8 +69,8 @@ export class Parser {
    * Terminate an instruction.
    * 
    * ```asm
-   * decr: 0
-   * #      ^
+   *   DEC 0
+   * ;      ^
    * ```
    */
   static INSTRUCTION_SUFFIX = `\n`
@@ -79,8 +79,8 @@ export class Parser {
    * Terminate an instruction label.
    * 
    * ```asm
-   * start program: 
-   * #            ^
+   * StartProgram: 
+   * ;           ^
    * ```
    */
   static BLOCK_SUFFIX = `:`
@@ -89,18 +89,18 @@ export class Parser {
    * End an operation and begin an argument list.
    * 
    * ```asm
-   * add: 0d1, 1  
-   * #  ^
+   * ADD 0d1, 0d2  
+   * ;  ^
    * ```
    */
-  static OP_SUFFIX = `:`
+  static OP_SUFFIX = ` `
 
   /**
    * Separate arguments after an operation.
    * 
    * ```asm
-   * sub: 0x10, 1
-   * #        ^
+   * SUB 0x10, 1
+   * ;       ^
    * ```
    */
   static ARG_SEP = `,`
@@ -109,8 +109,8 @@ export class Parser {
    * Introduce comments.
    * 
    * ```asm
-   * halt;  End program.
-   * #   ^
+   * HALT;  End program.
+   * ;   ^
    * ```
    */
   static COMMENT_PREFIX = `;`
@@ -123,8 +123,8 @@ export class Parser {
    * Get the address of a variable.
    * 
    * ```asm
-   * copy: &record, 0
-   * #     ^
+   * COPY &record, 0
+   * ;    ^
    * ```
    */
   static ADDRESS_SIGIL = `&`
@@ -133,8 +133,8 @@ export class Parser {
    * Access the value of a data label.
    * 
    * ```asm
-   * add: @record
-   * #    ^
+   * ADD @record
+   * ;   ^
    * ```
    */
   static VARIABLE_SIGIL = `@`
@@ -143,8 +143,8 @@ export class Parser {
    * Dereference data labels.
    * 
    * ```asm
-   * add: *stack
-   * #    ^
+   * ADD *stack
+   * ;   ^
    * ```
    */
   static POINTER_SIGIL = `*`
@@ -154,7 +154,7 @@ export class Parser {
   private variables: { [label: string]: number }
 
   private isa = [
-    { code: 'define', fn: this.define.bind(this) },
+    { code: 'DEF', fn: this.define.bind(this) },
   ]
 
   constructor(registers: AddressBus) {
@@ -397,13 +397,6 @@ export class Parser {
 
   /**
    * I parse a string like `0d10` or `0x4A` to a number.
-   * 
-   * | Code  |  Base   | Radix |
-   * | :---: | ------- | :---: |
-   * |  `b`  | Binary  | 2     |
-   * |  `o`  | Octal   | 8     |
-   * |  `d`  | Decimal | 10    |
-   * |  `x`  | Hex     | 16    |
    */
   private parseLiteral(text: string): number {
     const code = text[1]
