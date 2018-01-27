@@ -4,13 +4,11 @@
 
 import * as Debug from 'debug'
 
-import { Argument } from './Argument'
 import { Bitfield, Pointer, Port, Variable } from './Mutable'
 import { Channels, Memory } from './State'
-import { Runtime } from './Runtime'
 
 const log = Debug('Mel:Registers')
-const io = Debug('Mel:I/O')
+//const io = Debug('Mel:I/O')
 
 export enum Flags {
   HALT,
@@ -18,9 +16,10 @@ export enum Flags {
 }
 
 /**
- * I initialize a table of registers from provided memory and I/O. The set of
- * instructions will operate mostly on these registers, which modifies the
- * underlying memory and channels.
+ * I provide access to the memory, registers, and I/O channels.
+ * 
+ * The instructions in the program will operate mostly on these registers,
+ * which modifies the underlying memory and channels.
  * 
  * API:
  * - Accum
@@ -32,7 +31,7 @@ export enum Flags {
  * - Stack
  * - Map
  * - Memory
- * - Io
+ * - IO
  */
 export class AddressBus {
   static get NUM_REGISTERS(): number {
