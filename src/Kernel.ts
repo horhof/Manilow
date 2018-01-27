@@ -97,11 +97,10 @@ export class Kernel {
     // Stack.
     { code: 'PUSH', fn: this.push.bind(this) },
     { code: 'POP', fn: this.pop.bind(this) },
-    // Jumps.
+    // Branching.
     { code: 'GOTO', fn: this.jump.bind(this) },
     { code: 'IF', fn: this.jumpIf(zero) },
     { code: 'ELSE', fn: this.jumpIf(nonZero) },
-    // Subroutines.
     { code: 'ENTER', fn: this.call.bind(this) },
     { code: 'EXIT', fn: this.return.bind(this) },
   ]
