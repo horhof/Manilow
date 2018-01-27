@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "dependencies": {
     "debug": "^3.1.0",
-    "typescript": "^2.5.2"
+    "typescript": "^2.7.0-rc"
   },
   "scripts": {
     "start": "tsc && node src/main"
