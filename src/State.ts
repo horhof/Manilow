@@ -12,11 +12,11 @@ import { Word } from './Word'
 export abstract class State {
   static UNDEFINED = NaN
 
-  get(address?: number) {
+  get(_: number) {
     return State.UNDEFINED
   }
 
-  set(value: Word, address?: number) {
+  set(_: Word, __: number) {
     return
   }
 }

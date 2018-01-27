@@ -7,10 +7,10 @@ import * as Debug from 'debug'
 import { Argument } from './Argument'
 import { Kernel } from './Kernel'
 import { InstructionSource, ArgumentType, ArgumentSource } from './Parser'
-import { Literal, Block, Address } from './Literal'
+import { Literal, Block } from './Literal'
 import { Variable, Pointer } from './Mutable'
 import { Memory } from './State'
-import { AddressBus, Flags } from './AddressBus'
+import { Bus, Flags } from './Bus'
 
 const info = Debug('Mel:Runtime')
 const debug = Debug('Mel:Runtime:Debug')
@@ -39,18 +39,18 @@ export class Runtime {
 
   static STARTING_INSTRUCTION = 0
 
-  private registers: AddressBus
+  private registers: Bus
 
   private memory: Memory
 
   private kernel: Kernel
 
-  private program: Instruction[]
+  private program!: Instruction[]
 
   /** I track the steps to enforce a maximum number of operations. */
-  private steps: number
+  private steps = 0
 
-  constructor(registers: AddressBus, memory: Memory, kernel: Kernel) {
+  constructor(registers: Bus, memory: Memory, kernel: Kernel) {
     this.registers = registers
     this.memory = memory
     this.kernel = kernel
@@ -58,7 +58,7 @@ export class Runtime {
 
   /** I run the given program until completion. */
   run(source: InstructionSource[]): Promise<void> {
-    return new Promise((resolve, reject) => {
+    return new Promise(resolve => {
       info(`Running program of %d instructions...`, source.length)
 
       this.program = this.loadProgram(source)

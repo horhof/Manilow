@@ -11,7 +11,7 @@
 
 import * as Debug from 'debug'
 
-import { AddressBus } from './AddressBus'
+import { Bus } from './Bus'
 
 const info = Debug('Mel:Parser:Info')
 const debug = Debug('Mel:Parser:Debug')
@@ -149,7 +149,7 @@ export class Parser {
    */
   static POINTER_SIGIL = `*`
 
-  private blocks: { [label: string]: number }
+  private blocks!: { [label: string]: number }
 
   private variables: { [label: string]: number }
 
@@ -157,7 +157,7 @@ export class Parser {
     { code: 'DEF', fn: this.define.bind(this) },
   ]
 
-  constructor(registers: AddressBus) {
+  constructor(registers: Bus) {
     this.variables = JSON.parse(JSON.stringify(registers.map))
     debug(`new> Variables=%O`, this.variables)
   }
@@ -242,7 +242,7 @@ export class Parser {
     debug(`runDirectives> Received %d lines.`, lines.length)
 
     const instructions = <InstructionSource[]>lines
-      .map((instruction, index): InstructionSource | void => {
+      .map((instruction): InstructionSource | void => {
         const op = this.isa.find(op => op.code === instruction.operation)
 
         if (!op)
@@ -267,7 +267,7 @@ export class Parser {
       const address = index
       debug(`setBlockAddresses> Instruction %s has blocks: %o.`, instruction.operation, instruction.blocks)
 
-      instruction.blocks.forEach((block, index) => {
+      instruction.blocks.forEach(block => {
         const { label } = block
         this.blocks[label] = address
         info(`Assigning label "%s" the value of instruction #%d.`, label, address)

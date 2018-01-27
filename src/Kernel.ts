@@ -9,16 +9,15 @@ import * as Debug from 'debug'
 
 import { Argument } from './Argument'
 import { Bitfield } from './Mutable'
-import { Literal, Block, Address } from './Literal'
-import { Variable, Pointer } from './Mutable'
-import { Flags, AddressBus } from './AddressBus'
+import { Literal, Block } from './Literal'
+import { Variable } from './Mutable'
+import { Flags, Bus } from './Bus'
 import { Word } from './Word'
 
 const log = Debug('Mel:Kernel')
 
 type UnaryTransform = { (a: Word): Word }
 type BinaryTransform = { (a: Word, b: Word): Word }
-type TernaryTransform = { (a: Word, b: Word, c: Word): Word }
 
 type BinaryComparison = { (a: Word, b: Word): boolean }
 
@@ -43,8 +42,8 @@ function mul(a: Word, b: Word): Word { return a * b }
 // Unary predicates.
 function zero(a: Word): boolean { return eq(a, 0) }
 function nonZero(a: Word): boolean { return neq(a, 0) }
-function positive(a: Word): boolean { return gte(a, 0) }
-function negative(a: Word): boolean { return lt(a, 0) }
+//function positive(a: Word): boolean { return gte(a, 0) }
+//function negative(a: Word): boolean { return lt(a, 0) }
 
 // Binary predicates.
 function eq(a: Word, b: Word): boolean { return a === b }
@@ -63,7 +62,7 @@ function lte(a: Word, b: Word): boolean { return a < b }
  * - Lookup code: op code = ISA entry
  */
 export class Kernel {
-  registers: AddressBus
+  registers: Bus
 
   private isa: IsaEntry[] = [
     // Interpreter / loop.
@@ -105,7 +104,7 @@ export class Kernel {
     { code: 'EXIT', fn: this.return.bind(this) },
   ]
 
-  constructor(registers: AddressBus) {
+  constructor(registers: Bus) {
     this.registers = registers
   }
 

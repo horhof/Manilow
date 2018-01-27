@@ -4,7 +4,7 @@
 
 import * as Debug from 'debug'
 
-import { Bitfield, Pointer, Port, Variable } from './Mutable'
+import { Bitfield, Pointer, Port, Variable } from './argument/Mutable'
 import { Channels, Memory } from './State'
 
 const log = Debug('Mel:Registers')
@@ -33,9 +33,9 @@ export enum Flags {
  * - Memory
  * - IO
  */
-export class AddressBus {
+export class Bus {
   static get NUM_REGISTERS(): number {
-    return AddressBus.NUM_NAMED_REGS + AddressBus.NUM_UNNAMED_REGS
+    return Bus.NUM_NAMED_REGS + Bus.NUM_UNNAMED_REGS
   }
 
   static NUM_NAMED_REGS = 8

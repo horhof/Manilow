@@ -14,8 +14,8 @@ const log = Debug('Mel:Mutable')
 //const io = Debug('Mel:I/O')
 
 import { Argument } from './Argument'
-import { State } from './State'
-import { Word } from './Word'
+import { State } from '../State'
+import { Word } from '../Word'
 
 abstract class Mutable extends Argument {
   get address() {

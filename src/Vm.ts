@@ -7,7 +7,7 @@ import * as Debug from 'debug'
 
 import { Parser } from './Parser'
 import { Kernel } from './Kernel'
-import { AddressBus } from './AddressBus'
+import { Bus } from './Bus'
 import { Runtime } from './Runtime'
 import { Channels, Memory } from './State'
 import { Word } from './Word'
@@ -23,7 +23,7 @@ const log = Debug('Mel:Vm')
 export class Vm {
   private memory!: Memory
 
-  private registers!: AddressBus
+  private bus!: Bus
 
   private io!: Channels
 
@@ -69,7 +69,7 @@ export class Vm {
 
   private initMemory(): void {
     log(`Initializing memory...`)
-    this.memory = new Memory(Array(AddressBus.NUM_REGISTERS).fill(0))
+    this.memory = new Memory(Array(Bus.NUM_REGISTERS).fill(0))
   }
 
   private initIo(): void {
@@ -81,17 +81,17 @@ export class Vm {
 
   private initRegisters(): void {
     log(`Initializing registers...`)
-    this.registers = new AddressBus(this.memory, this.io)
+    this.bus = new Bus(this.memory, this.io)
   }
 
   private initComponents(): void {
     log(`Initializing kernel...`)
-    this.kernel = new Kernel(this.registers)
+    this.kernel = new Kernel(this.bus)
 
     log(`Initializing interpreter...`)
-    this.interpreter = new Runtime(this.registers, this.memory, this.kernel)
+    this.interpreter = new Runtime(this.bus, this.memory, this.kernel)
 
     log(`Initializing parser...`)
-    this.parser = new Parser(this.registers)
+    this.parser = new Parser(this.bus)
   }
 }
