@@ -2,15 +2,34 @@
   "compilerOptions": {
     "module": "commonjs",
     "target": "es2016",
+    "preserveConstEnums": true,
+    "sourceMap": true,
+    "strictFunctionTypes": true,
     "noImplicitAny": true,
-    "strictNullChecks": true,
+    "noUnusedParameters": true,
+    "noUnusedLocals": true,
     "noImplicitReturns": true,
     "noImplicitThis": true,
-    "removeComments": true,
-    "preserveConstEnums": true,
-    "sourceMap": true
+    "strictNullChecks": true,
+    "strictPropertyInitialization": true
   },
   "files": [
     "src/main.ts"
-  ]
+  ],
+  "typedocOptions": {
+    "mode": "file",
+    "out": "docs",
+    "exclude": "test",
+    "theme": "default",
+    "ignoreCompilerErrors": true,
+    "excludePrivate": false,
+    "excludeNotExported": true,
+    "target": "ES5",
+    "moduleResolution": "node",
+    "preserveConstEnums": true,
+    "stripInternal": true,
+    "suppressExcessPropertyErrors": true,
+    "suppressImplicitAnyIndexErrors": true,
+    "module": "commonjs"
+  }
 }
