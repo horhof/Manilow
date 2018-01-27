@@ -18,20 +18,20 @@ const log = Debug('Mel:Vm')
  * I am the public interface of the entire machine.
  * 
  * API:
- * - <run>: filename.
+ * - <Run>: filename.
  */
 export class Vm {
-  private memory: Memory
+  private memory!: Memory
 
-  private registers: AddressBus
+  private registers!: AddressBus
 
-  private io: Channels
+  private io!: Channels
 
-  private kernel: Kernel
+  private kernel!: Kernel
 
-  private interpreter: Runtime
+  private interpreter!: Runtime
 
-  private parser: Parser
+  private parser!: Parser
 
   constructor() {
     this.initMemory()
