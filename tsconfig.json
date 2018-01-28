@@ -13,8 +13,8 @@
     "strictNullChecks": true,
     "strictPropertyInitialization": true
   },
-  "files": [
-    "src/main.ts"
+  "include": [
+    "src/*.ts"
   ],
   "typedocOptions": {
     "mode": "file",
