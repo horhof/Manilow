@@ -7,7 +7,9 @@
  *     - Memory
  */
 
-import { Word } from './Word'
+import {
+  Word
+} from './types';
 
 export abstract class State {
   static UNDEFINED = NaN

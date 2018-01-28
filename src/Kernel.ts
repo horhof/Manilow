@@ -7,12 +7,14 @@
 
 import * as Debug from 'debug'
 
-import { Argument } from './Argument'
-import { Bitfield } from './Mutable'
-import { Literal, Block } from './Literal'
-import { Variable } from './Mutable'
-import { Flags, Bus } from './Bus'
-import { Word } from './Word'
+import { Block, Literal } from './argument/Literal'
+import { Bitfield, Variable } from './argument/Mutable'
+import { Bus } from './Bus'
+import {
+  Flags,
+  IsaEntry,
+  Word
+} from './types';
 
 const log = Debug('Mel:Kernel')
 
@@ -20,11 +22,6 @@ type UnaryTransform = { (a: Word): Word }
 type BinaryTransform = { (a: Word, b: Word): Word }
 
 type BinaryComparison = { (a: Word, b: Word): boolean }
-
-interface IsaEntry {
-  code: string
-  fn: { (...x: Argument[]): void }
-}
 
 // Unary transforms.
 function increment(a: Word): Word { return a + 1 }
@@ -66,42 +63,42 @@ export class Kernel {
 
   private isa: IsaEntry[] = [
     // Interpreter / loop.
-    { code: 'NOOP', fn: () => undefined },
-    { code: 'HALT', fn: () => { this.registers.flags.set(Flags.HALT) } },
+    { opCode: 'NOOP', lambda: () => undefined },
+    { opCode: 'HALT', lambda: () => { this.registers.flags.set(Flags.HALT) } },
     // Data manipulation.
-    { code: 'COPY', fn: this.copy.bind(this) },
-    { code: 'ZERO', fn: this.zero.bind(this) },
+    { opCode: 'COPY', lambda: this.copy.bind(this) },
+    { opCode: 'ZERO', lambda: this.zero.bind(this) },
     // I/O operations.
-    { code: 'IN', fn: this.in.bind(this) },
-    { code: 'OUT', fn: this.out.bind(this) },
+    { opCode: 'IN', lambda: this.in.bind(this) },
+    { opCode: 'OUT', lambda: this.out.bind(this) },
     // Comparison.
-    { code: 'EQ', fn: this.compare(eq) },
-    { code: 'NEQ', fn: this.compare(neq) },
-    { code: 'GT', fn: this.compare(gt) },
-    { code: 'GTE', fn: this.compare(gte) },
-    { code: 'LT', fn: this.compare(lt) },
-    { code: 'LTE', fn: this.compare(lte) },
+    { opCode: 'EQ', lambda: this.compare(eq) },
+    { opCode: 'NEQ', lambda: this.compare(neq) },
+    { opCode: 'GT', lambda: this.compare(gt) },
+    { opCode: 'GTE', lambda: this.compare(gte) },
+    { opCode: 'LT', lambda: this.compare(lt) },
+    { opCode: 'LTE', lambda: this.compare(lte) },
     // Arithmetic.
     // - Source and destination.
-    { code: 'ADD', fn: this.applySrcToDest(add) },
-    { code: 'SUB', fn: this.applySrcToDest(sub) },
-    { code: 'MUL', fn: this.applySrcToDest(mul) },
+    { opCode: 'ADD', lambda: this.applySrcToDest(add) },
+    { opCode: 'SUB', lambda: this.applySrcToDest(sub) },
+    { opCode: 'MUL', lambda: this.applySrcToDest(mul) },
     // - Destination only.
-    { code: 'INC', fn: this.applyToDest(increment) },
-    { code: 'DEC', fn: this.applyToDest(decrement) },
-    { code: 'NEG', fn: this.applyToDest(negate) },
-    { code: 'DBL', fn: this.applyToDest(double) },
-    { code: 'SQ', fn: this.applyToDest(square) },
-    { code: 'SQRT', fn: this.applyToDest(sqrt) },
+    { opCode: 'INC', lambda: this.applyToDest(increment) },
+    { opCode: 'DEC', lambda: this.applyToDest(decrement) },
+    { opCode: 'NEG', lambda: this.applyToDest(negate) },
+    { opCode: 'DBL', lambda: this.applyToDest(double) },
+    { opCode: 'SQ', lambda: this.applyToDest(square) },
+    { opCode: 'SQRT', lambda: this.applyToDest(sqrt) },
     // Stack.
-    { code: 'PUSH', fn: this.push.bind(this) },
-    { code: 'POP', fn: this.pop.bind(this) },
+    { opCode: 'PUSH', lambda: this.push.bind(this) },
+    { opCode: 'POP', lambda: this.pop.bind(this) },
     // Branching.
-    { code: 'GOTO', fn: this.jump.bind(this) },
-    { code: 'IF', fn: this.jumpIf(zero) },
-    { code: 'ELSE', fn: this.jumpIf(nonZero) },
-    { code: 'ENTER', fn: this.call.bind(this) },
-    { code: 'EXIT', fn: this.return.bind(this) },
+    { opCode: 'GOTO', lambda: this.jump.bind(this) },
+    { opCode: 'IF', lambda: this.jumpIf(zero) },
+    { opCode: 'ELSE', lambda: this.jumpIf(nonZero) },
+    { opCode: 'ENTER', lambda: this.call.bind(this) },
+    { opCode: 'EXIT', lambda: this.return.bind(this) },
   ]
 
   constructor(registers: Bus) {
@@ -109,7 +106,7 @@ export class Kernel {
   }
 
   lookupOp(code: string): IsaEntry | void {
-    return this.isa.find(entry => entry.code === code)
+    return this.isa.find(entry => entry.opCode === code)
   }
 
   /**

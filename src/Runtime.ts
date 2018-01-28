@@ -4,23 +4,23 @@
 
 import * as Debug from 'debug'
 
-import { Argument } from './Argument'
+import { Argument } from './argument/Argument'
+import { Block, Literal } from './argument/Literal'
+import { Pointer, Variable } from './argument/Mutable'
 import { Kernel } from './Kernel'
-import { InstructionSource, ArgumentType, ArgumentSource } from './Parser'
-import { Literal, Block } from './Literal'
-import { Variable, Pointer } from './Mutable'
 import { Memory } from './State'
-import { Bus, Flags } from './Bus'
+import { Bus } from './Bus'
+import {
+  ArgumentSource,
+  ArgumentType,
+  Flags,
+  Instruction,
+  InstructionSource
+} from './types'
 
 const info = Debug('Mel:Runtime')
 const debug = Debug('Mel:Runtime:Debug')
 const memoryDebug = Debug('Mel:Memory')
-
-interface Instruction {
-  lambda: Function
-  op: string
-  args: Argument[]
-}
 
 /**
  * I am given a set of data structures representing the parsed source code, the
@@ -95,9 +95,9 @@ export class Runtime {
   step(): void {
     debug(`step> Begin.`)
     const no = this.registers.instr.read()
-    const { lambda, op, args } = this.program[no]
+    const { lambda, opCode, args } = this.program[no]
 
-    debug(`#step> Raw instruction: IP=%o Op=%o`, no, op)
+    debug(`#step> Raw instruction: IP=%o Op=%o`, no, opCode)
     info(`Running instruction %d/%d...`, no, this.program.length)
 
     if (!lambda) {
@@ -107,10 +107,10 @@ export class Runtime {
 
     if (args.length > 0)
       info(`%s: %o %o`,
-        op,
+        opCode,
         args.map((a: any) => a.summary))
     else
-      info(`%s`, op)
+      info(`%s`, opCode)
 
     lambda()
 
@@ -134,13 +134,16 @@ export class Runtime {
     }
   }
 
+  /**
+   * Load the compiled instruction into bound instructions.
+   */
   loadProgram(instructions: InstructionSource[]): Instruction[] {
     return instructions.map(source => {
-      const fn = this.bindOperation(source.operation)
+      const fn = this.bindOperation(source.opCode)
       const args = <Argument[]>source.arguments
         .map(this.bindArgument.bind(this))
       const lambda = () => { fn(...args) }
-      return { lambda, op: source.operation, args }
+      return { lambda, opCode: source.opCode, args }
     })
   }
 
@@ -151,7 +154,7 @@ export class Runtime {
     if (!op)
       throw new Error(`Error: operation "${operation}" not found.`)
 
-    return op.fn
+    return op.lambda
   }
 
   /** I return the type of argument represented by the given source. */

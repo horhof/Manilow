@@ -6,10 +6,18 @@
     "typescript": "^2.7.0-rc"
   },
   "scripts": {
-    "start": "tsc && node src/main"
+    "start": "tsc && node src/main",
+    "test": "tsc && _mocha --require ts-node/register ./test/*_test.ts"
   },
   "devDependencies": {
+    "@types/chai": "^4.1.2",
+    "@types/chai-as-promised": "^7.1.0",
     "@types/debug": "0.0.30",
-    "@types/node": "^8.0.46"
+    "@types/mocha": "^2.2.47",
+    "@types/node": "^8.0.46",
+    "chai": "^4.1.2",
+    "chai-as-promised": "^7.1.1",
+    "mocha": "^5.0.0",
+    "ts-node": "^4.1.0"
   }
 }

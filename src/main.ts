@@ -18,8 +18,8 @@ process
     process.exit(1);
   });
 
-import { Vm } from './Vm'
-const vm = new Vm()
+import { Machine } from './Machine'
+const vm = new Machine()
 console.log('Main entry> Running program...')
 vm.run('mel-src/source.s')
   .then(() => {

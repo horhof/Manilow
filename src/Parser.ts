@@ -11,47 +11,18 @@
 
 import * as Debug from 'debug'
 
+import {
+  ArgumentSource,
+  ArgumentType,
+  BlockSource,
+  InstructionSource,
+  SourceLine
+} from './types'
 import { Bus } from './Bus'
 
 const info = Debug('Mel:Parser:Info')
 const debug = Debug('Mel:Parser:Debug')
 
-/**
- * The arguments to operations are either:
- * 
- * 1. compile-time constants directly in the source code,
- * 2. the data that operations act on,
- * 3. the blocks that organize operations.
- */
-export enum ArgumentType {
-  BLOCK = 'BLOCK',
-  LITERAL = 'LITERAL',
-  ADDRESS = 'ADDRESS',
-  VARIABLE = 'VARIABLE',
-  POINTER = 'POINTER'
-}
-
-interface SourceLine {
-  block?: BlockSource
-  instruction?: InstructionSource
-  comment?: string
-}
-
-interface BlockSource {
-  label: string
-}
-
-export interface InstructionSource {
-  // Added in later pass.
-  blocks?: BlockSource[]
-  operation: string
-  arguments: ArgumentSource[]
-}
-
-export interface ArgumentSource {
-  type: ArgumentType
-  content: string | number
-}
 
 /**
  * I take incoming source code and return a parsed program.
@@ -173,7 +144,7 @@ export class Parser {
 
     debug(`#getProgram> Lines=...`)
     lines.forEach(l => {
-      const operation = l.instruction && l.instruction.operation
+      const operation = l.instruction && l.instruction.opCode
       const args = l.instruction && l.instruction.arguments
       debug(`Block=%o Op=%o Args=%o Comment=%o`, l.block, operation, args, l.comment)
     })
@@ -213,11 +184,11 @@ export class Parser {
         }
         else if (instruction) {
           if (blocks.length > 0) {
-            const { operation } = instruction
+            const { opCode } = instruction
 
             info(`Blocks %o will point to an "%s" operation.`,
               blocks.map(x => x.label),
-              operation)
+              opCode)
 
             instruction.blocks = blocks
             blocks = []
@@ -243,7 +214,7 @@ export class Parser {
 
     const instructions = <InstructionSource[]>lines
       .map((instruction): InstructionSource | void => {
-        const op = this.isa.find(op => op.code === instruction.operation)
+        const op = this.isa.find(op => op.code === instruction.opCode)
 
         if (!op)
           return instruction
@@ -265,7 +236,7 @@ export class Parser {
         return
 
       const address = index
-      debug(`setBlockAddresses> Instruction %s has blocks: %o.`, instruction.operation, instruction.blocks)
+      debug(`setBlockAddresses> Instruction %s has blocks: %o.`, instruction.opCode, instruction.blocks)
 
       instruction.blocks.forEach(block => {
         const { label } = block
@@ -350,18 +321,18 @@ export class Parser {
     //debug(`parseInstructionSource> Source="%s" HasArgs=%o`, line, hasArguments)
 
     if (!hasArguments)
-      return { operation: line, arguments: [] }
+      return { opCode: line, arguments: [] }
 
     const split = line.split(Parser.OP_SUFFIX)
-    const operation = split[0]
+    const opCode = split[0]
     const argumentSource = <string[]>line
-      .replace(`${operation}${Parser.OP_SUFFIX}`, '')
+      .replace(`${opCode}${Parser.OP_SUFFIX}`, '')
       .trim()
       .split(Parser.ARG_SEP)
 
     const args = <ArgumentSource[]>argumentSource.map(this.parseArgumentSource.bind(this))
 
-    return { operation, arguments: args }
+    return { opCode, arguments: args }
   }
 
   private parseArgumentSource(argText: string): ArgumentSource {

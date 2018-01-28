@@ -2,6 +2,7 @@
  * Defines the machine's registers and I/O.
  */
 
+
 import * as Debug from 'debug'
 
 import { Bitfield, Pointer, Port, Variable } from './argument/Mutable'
@@ -9,11 +10,6 @@ import { Channels, Memory } from './State'
 
 const log = Debug('Mel:Registers')
 //const io = Debug('Mel:I/O')
-
-export enum Flags {
-  HALT,
-  ZERO
-}
 
 /**
  * I provide access to the memory, registers, and I/O channels.
