@@ -2,26 +2,23 @@
  * Defines the arguments for operations which represent mutable data.
  * 
  * Classes:
- * - Variable
+ * - [Mutable]
+ *   - Variable
  *     - Bitfield
  *     - Pointer
- * - Port
+ *   - Port
  */
 
 import * as Debug from 'debug'
-
-const log = Debug('Mel:Mutable')
-//const io = Debug('Mel:I/O')
 
 import { Argument } from './Argument'
 import { State } from '../State'
 import { Word } from '../types'
 
-abstract class Mutable extends Argument {
-  get address() {
-    return this.data
-  }
+const log = Debug('Mel:Mutable')
+//const io = Debug('Mel:I/O')
 
+abstract class Mutable extends Argument {
   data!: number
 
   label: string
@@ -38,14 +35,8 @@ abstract class Mutable extends Argument {
     this.state = state
   }
 
-  dump() {
-    return {
-      //str: `Reg=%o Addr=%o Data=%o Read=%o`,
-      label: this.label,
-      address: this.address,
-      data: this.data,
-      read: this.read()
-    }
+  get address() {
+    return this.data
   }
 
   read() {
@@ -79,11 +70,24 @@ abstract class Mutable extends Argument {
     const old = this.read()
     this.write(old ^ bit)
   }
+
+  dump() {
+    return {
+      //str: `Reg=%o Addr=%o Data=%o Read=%o`,
+      label: this.label,
+      address: this.address,
+      data: this.data,
+      read: this.read()
+    }
+  }
+
 }
 
 /**
  * I am an operand that is bound to some kind of state and whose read nad write
  * operations mutate that state.
+ * 
+ * A variable's internal data represents an address.
  */
 export class Variable extends Mutable {
   get summary() {
