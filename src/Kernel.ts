@@ -7,7 +7,7 @@
 
 import * as Debug from 'debug'
 
-import { Block, Literal } from './argument/Literal'
+import { Block, Literal } from './argument/argument'
 import { Bitfield, Variable } from './argument/Mutable'
 import { Bus } from './Bus'
 import {

@@ -4,8 +4,7 @@
 
 import * as Debug from 'debug'
 
-import { Argument } from './argument/Argument'
-import { Block, Literal } from './argument/Literal'
+import { Argument, Block, Literal } from './argument/Argument'
 import { Pointer, Variable } from './argument/Mutable'
 import { Kernel } from './Kernel'
 import { Memory } from './State'
