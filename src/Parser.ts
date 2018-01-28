@@ -120,7 +120,7 @@ export class Parser {
    */
   static POINTER_SIGIL = `*`
 
-  private instructionCount = 0
+  //private instructionCount = 0
 
   private blocks!: { [label: string]: number }
 
@@ -142,12 +142,12 @@ export class Parser {
 
   getProgram(source: string) {
     this.blocks = {}
-    this.instructionCount = 0
+    //this.instructionCount = 0
 
     const lines = source
       .split(Parser.INSTRUCTION_SUFFIX)
       .map(line => {
-        this.instructionCount++
+        //this.instructionCount++
         return this.parseLine(line)
       })
 
