@@ -1,4 +1,4 @@
-import { Word } from '../Word'
+import { Word } from '../types'
 
 /**
  * I am an abstract class representing an entity capable of being an argument
