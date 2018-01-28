@@ -100,17 +100,8 @@ export class Variable extends Mutable {
  * and write to the channel's queue.
  */
 export class Port extends Mutable {
-  get summary(): string {
+  get summary() {
     return `${this.read()} (:${this.address})`
-  }
-
-  read(): Word {
-    const value = this.state.get(this.address)
-    return value
-  }
-
-  write(value: Word): void {
-    this.state.set(this.address, value)
   }
 }
 
@@ -125,7 +116,7 @@ export class Port extends Mutable {
  * - Toggle: flag.
  */
 export class Bitfield extends Variable {
-  get summary(): string {
+  get summary() {
     let bits = this.read().toString(2)
     return `val b${bits} (addr ${this.address})`
   }
