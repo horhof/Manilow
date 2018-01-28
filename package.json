@@ -1,13 +1,13 @@
 {
   "name": "mel",
   "version": "0.1.0",
-  "dependencies": {
-    "debug": "^3.1.0",
-    "typescript": "^2.7.0-rc"
-  },
   "scripts": {
-    "start": "tsc && node src/main",
-    "test": "tsc && _mocha --require ts-node/register ./test/*_test.ts"
+    "compile": "tsc",
+    "test": "tsc && _mocha --require ts-node/register ./test/*_test.ts",
+    "start": "tsc && node src/Loader"
+  },
+  "dependencies": {
+    "debug": "^3.1.0"
   },
   "devDependencies": {
     "@types/chai": "^4.1.2",
@@ -18,6 +18,7 @@
     "chai": "^4.1.2",
     "chai-as-promised": "^7.1.1",
     "mocha": "^5.0.0",
-    "ts-node": "^4.1.0"
+    "ts-node": "^4.1.0",
+    "typescript": "^2.7.0-rc"
   }
 }
