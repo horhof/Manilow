@@ -1,4 +1,5 @@
 /node_modules
 /doc
+/coverage
 /src/**/*.js
 /src/**/*.js.map
