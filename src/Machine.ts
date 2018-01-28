@@ -2,15 +2,14 @@
  * Defines the virtual machine.
  */
 
-import * as fs from 'fs'
 import * as Debug from 'debug'
 
-import { Parser } from './Parser'
-import { Kernel } from './Kernel'
 import { Bus } from './Bus'
+import { Kernel } from './Kernel'
+import { Parser } from './Parser'
 import { Runtime } from './Runtime'
 import { Channels, Memory } from './State'
-import { Word } from './Word'
+import { Word } from './types';
 
 const log = Debug('Mel:Vm')
 
@@ -18,20 +17,20 @@ const log = Debug('Mel:Vm')
  * I am the public interface of the entire machine.
  * 
  * API:
- * - <Run>: filename.
+ * - <Run>: program source code.
  */
-export class Vm {
-  private memory!: Memory
-
-  private bus!: Bus
+export class Machine {
+  bus!: Bus
 
   private io!: Channels
 
   private kernel!: Kernel
 
-  private interpreter!: Runtime
+  private memory!: Memory
 
   private parser!: Parser
+
+  private runtime!: Runtime
 
   constructor() {
     this.initMemory()
@@ -40,9 +39,12 @@ export class Vm {
     this.initComponents()
   }
 
-  run(filename: string): Promise<void> {
-    log(`Machine start.`)
-    const program = this.loadProgram(filename)
+  /**
+   * Parse and run the given source code.
+   */
+  run(source: string) {
+    log(`Machine start. Program is %d characters.`, source.length)
+    const program = this.parser.getProgram(source)
 
     log(`Program loaded...`)
     program.forEach(instruction => {
@@ -50,7 +52,7 @@ export class Vm {
     })
 
     log(`Running program...`)
-    return this.interpreter.run(program)
+    return this.runtime.run(program)
       .then(() => {
         const input = this.io.get(0)
         const output = this.io.get(1)
@@ -61,35 +63,29 @@ export class Vm {
       })
   }
 
-  private loadProgram(filename: string): any[] {
-    log(`Reading source code...`)
-    const source = fs.readFileSync(filename, 'utf-8')
-    return this.parser.getProgram(source)
-  }
-
-  private initMemory(): void {
+  private initMemory() {
     log(`Initializing memory...`)
     this.memory = new Memory(Array(Bus.NUM_REGISTERS).fill(0))
   }
 
-  private initIo(): void {
+  private initIo() {
     log(`Initializing I/O channels...`)
     const input: Word[] = [3, 2, 0, 5, 17, 0, 23]
     const output: Word[] = []
     this.io = new Channels([input, output])
   }
 
-  private initRegisters(): void {
+  private initRegisters() {
     log(`Initializing registers...`)
     this.bus = new Bus(this.memory, this.io)
   }
 
-  private initComponents(): void {
+  private initComponents() {
     log(`Initializing kernel...`)
     this.kernel = new Kernel(this.bus)
 
     log(`Initializing interpreter...`)
-    this.interpreter = new Runtime(this.bus, this.memory, this.kernel)
+    this.runtime = new Runtime(this.bus, this.memory, this.kernel)
 
     log(`Initializing parser...`)
     this.parser = new Parser(this.bus)
