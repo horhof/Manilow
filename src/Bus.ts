@@ -8,8 +8,7 @@ import * as Debug from 'debug'
 import { Bitfield, Pointer, Port, Variable } from './argument/Mutable'
 import { IO, Memory } from './State'
 
-const log = Debug('Mel:Registers')
-//const io = Debug('Mel:I/O')
+const log = Debug('Mel:Bus')
 
 /**
  * I provide access to the memory, registers, and I/O channels.
@@ -30,7 +29,7 @@ const log = Debug('Mel:Registers')
  * - IO
  */
 export class Bus {
-  static get NUM_REGISTERS(): number {
+  static get NUM_REGISTERS() {
     return Bus.NUM_NAMED_REGS + Bus.NUM_UNNAMED_REGS
   }
 
@@ -63,6 +62,7 @@ export class Bus {
   /** General purpose registers. */
   anon: Variable[]
 
+  /** A map of register labels to their addresses within memory. */
   map: { [label: string]: number }
 
   memory: Memory
@@ -107,17 +107,13 @@ export class Bus {
    * The rest are initialized as data addresses tied to memory.
    */
   private initRegister(label: string, address: number): Variable {
-    log(`initRegister> Initializing %s at address %d...`, label, address)
     const register = new Variable(label, address, this.memory)
-    log(`initRegister> Register=%O`, register.dump())
     this.map[label] = address
     return register
   }
 
   private initPointer(label: string, address: number): Pointer {
-    log(`initPointer> Initializing %s at address %d...`, label, address)
     const register = new Pointer(label, address, this.memory)
-    log(`initPointer> Register=%O`, register.dump())
     this.map[label] = address
     return register
   }
