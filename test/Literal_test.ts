@@ -9,18 +9,12 @@ const expect = chai.expect;
 const log = Debug('Mel:Test');
 
 describe(`Literal`, () => {
-  it(`should be readable for decimal values`, () => {
-    const arg = new Literal(4)
-    expect(arg.read()).to.equal(4)
-  })
+  it(`should be readable for decimal values`, () =>
+    expect(new Literal(4).read()).to.equal(4))
 
-  it(`should report UNDEFINED for null values`, () => {
-    const arg = new Literal(null)
-    expect(arg.read()).to.eql(Argument.UNDEFINED)
-  })
+  it(`should report UNDEFINED for null values`, () =>
+    expect(new Literal(null).read()).to.eql(Argument.UNDEFINED))
 
-  it(`should not have an address`, () => {
-    const arg = new Literal(1)
-    expect(arg.address).to.eql(Argument.UNDEFINED)
-  })
+  it(`should not have an address`, () =>
+    expect(new Literal(1).address).to.eql(Argument.UNDEFINED))
 })
