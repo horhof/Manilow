@@ -8,7 +8,7 @@ import { Bus } from './Bus'
 import { Kernel } from './Kernel'
 import { Parser } from './Parser'
 import { Runtime } from './Runtime'
-import { Channels, Memory } from './State'
+import { IO, Memory } from './State'
 import { Word } from './types';
 
 const log = Debug('Mel:Vm')
@@ -16,13 +16,16 @@ const log = Debug('Mel:Vm')
 /**
  * I am the public interface of the entire machine.
  * 
+ * I am given source code and I run it, taking care of parsing the source into
+ * a program and linking together all the VM's components.
+ * 
  * API:
  * - <Run>: program source code.
  */
 export class Machine {
   bus!: Bus
 
-  private io!: Channels
+  private io!: IO
 
   private kernel!: Kernel
 
@@ -72,7 +75,7 @@ export class Machine {
     log(`Initializing I/O channels...`)
     const input: Word[] = [3, 2, 0, 5, 17, 0, 23]
     const output: Word[] = []
-    this.io = new Channels([input, output])
+    this.io = new IO([input, output])
   }
 
   private initRegisters() {

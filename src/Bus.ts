@@ -6,7 +6,7 @@
 import * as Debug from 'debug'
 
 import { Bitfield, Pointer, Port, Variable } from './argument/Mutable'
-import { Channels, Memory } from './State'
+import { IO, Memory } from './State'
 
 const log = Debug('Mel:Registers')
 //const io = Debug('Mel:I/O')
@@ -67,9 +67,9 @@ export class Bus {
 
   memory: Memory
 
-  io: Channels
+  io: IO
 
-  constructor(memory: Memory, io: Channels) {
+  constructor(memory: Memory, io: IO) {
     this.memory = memory
     this.io = io
 

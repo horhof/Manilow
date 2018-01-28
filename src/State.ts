@@ -2,14 +2,12 @@
  * Defines the classes storing the state of the machine.
  * 
  * Classes:
- * - State
- *     - Channels
- *     - Memory
+ * - [State]
+ *   - Channels
+ *   - Memory
  */
 
-import {
-  Word
-} from './types';
+import { Channel, Word } from './types';
 
 export abstract class State {
   static UNDEFINED = NaN
@@ -23,10 +21,13 @@ export abstract class State {
   }
 }
 
-export class Channels extends State {
-  data: Word[][]
+/**
+ * I/O is an ordered set of queues, each one called a channel.
+ */
+export class IO extends State {
+  private data: Channel[]
 
-  constructor(data: Word[][] = [[]]) {
+  constructor(data: Channel[] = [[]]) {
     super()
     this.data = data
   }
@@ -44,12 +45,14 @@ export class Channels extends State {
 
     return value
   }
+
+  // set?
 }
 
 export class Memory extends State {
   static STACK_SEGMENT = 50
 
-  data: Word[]
+  private data: Word[]
 
   constructor(data: Word[] = []) {
     super()

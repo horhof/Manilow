@@ -92,3 +92,5 @@ export interface IsaEntry {
  * A machine word holding data.
  */
 export type Word = number
+
+export type Channel = Word[]
