@@ -120,27 +120,36 @@ export class Parser {
    */
   static POINTER_SIGIL = `*`
 
+  private instructionCount = 0
+
   private blocks!: { [label: string]: number }
 
   private variables: { [label: string]: number }
 
+  /**
+   * Parser-specific directives that appear in the source code.
+   * 
+   * These are removed by the time the compiled program is given to the
+   * runtime.
+   */
   private isa = [
     { code: 'DEF', fn: this.define.bind(this) },
   ]
 
   constructor(registers: Bus) {
     this.variables = JSON.parse(JSON.stringify(registers.map))
-    debug(`new> Variables=%O`, this.variables)
   }
 
   getProgram(source: string) {
-    //debug(`#getProgram>`)
     this.blocks = {}
+    this.instructionCount = 0
 
-    //debug(`#getProgram> Source=%o`, source)
-    const lines = <SourceLine[]>source
+    const lines = source
       .split(Parser.INSTRUCTION_SUFFIX)
-      .map(this.parseLine.bind(this))
+      .map(line => {
+        this.instructionCount++
+        return this.parseLine(line)
+      })
 
     debug(`#getProgram> Lines=...`)
     lines.forEach(l => {
@@ -310,7 +319,10 @@ export class Parser {
     }
     else {
       //debug(`parseLine> Line %d is an instruction.`, this.instructionCount)
-      instruction = this.parseInstructionSource(line)
+      const parts = line.split(Parser.COMMENT_PREFIX)
+      const instructionText = parts.shift()
+      comment = parts.join('')
+      instruction = this.parseInstructionSource(instructionText!)
     }
 
     return { block, instruction, comment }
