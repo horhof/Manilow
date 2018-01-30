@@ -24,7 +24,7 @@ describe(`Subroutines`, () => {
     `)
       .then(() => vm.bus.accum.read())).to.eventually.equal(1))
 
-  it.only(`should call subroutines`, () =>
+  it(`should call subroutines`, () =>
     expect(vm.run(`
     Start:
       COPY 0d3   ; Start with 3.
