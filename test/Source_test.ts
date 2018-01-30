@@ -15,15 +15,6 @@ describe(`Virtual machine`, () => {
     vm = new Machine()
   })
 
-  it(`should support comments`, () =>
-    expect(vm.run(`
-    ; A one-line comment.
-    Start:          ; Support comments on block lines.
-      COPY 0d100    ; In-line comment on instruction.
-      COPY 0d100;;;;; Support many comment markers.
-    `)
-      .then(() => vm.bus.accum.read())).to.eventually.equal(100))
-
   it(`should copy to the accumulator`, () =>
     expect(vm.run(`
       COPY 0d100
@@ -36,4 +27,22 @@ describe(`Virtual machine`, () => {
       MUL 0d2
     `)
       .then(() => vm.bus.accum.read())).to.eventually.equal(200))
+
+  it(`should increment`, () =>
+    expect(vm.run(`
+      COPY 0d100
+      INC
+      INC
+      INC
+    `)
+      .then(() => vm.bus.accum.read())).to.eventually.equal(103))
+
+  it(`should decrement`, () =>
+    expect(vm.run(`
+      COPY 0d100
+      DEC
+      DEC
+      DEC
+    `)
+      .then(() => vm.bus.accum.read())).to.eventually.equal(97))
 });
