@@ -45,4 +45,11 @@ describe(`Virtual machine`, () => {
       DEC
     `)
       .then(() => vm.bus.accum.read())).to.eventually.equal(97))
+
+  it(`should support variable names`, () =>
+    expect(vm.run(`
+      DEF 0d2, &studentName    ; Student name points to address 2.
+      COPY 0d10, @studentName  ; 10 will be in address 2.
+    `)
+      .then(() => vm.bus.memory.get(2))).to.eventually.equal(10))
 })
