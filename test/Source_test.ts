@@ -1,19 +1,19 @@
-import * as chai from 'chai';
-import * as chaiAsPromised from 'chai-as-promised';
-chai.use(chaiAsPromised);
-const expect = chai.expect;
-import * as Debug from 'debug';
+/**
+ * Test that source code can be parsed.
+ */
 
+import { expect, log } from './setup'
 import { Machine } from '../src/Machine'
-
-const log = Debug('Mel:Test');
 
 describe(`Virtual machine`, () => {
   let vm: Machine
 
-  beforeEach(() => {
-    vm = new Machine()
-  })
+  beforeEach(() => vm = new Machine())
+
+  it(`should throw on unrecognized op code`, () =>
+    expect(vm.run(`
+      JIMJOM 0d100
+    `)).to.be.rejectedWith(Error))
 
   it(`should copy to the accumulator`, () =>
     expect(vm.run(`
@@ -45,4 +45,4 @@ describe(`Virtual machine`, () => {
       DEC
     `)
       .then(() => vm.bus.accum.read())).to.eventually.equal(97))
-});
+})

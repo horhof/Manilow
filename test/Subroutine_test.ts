@@ -1,19 +1,15 @@
-import * as chai from 'chai';
-import * as chaiAsPromised from 'chai-as-promised';
-chai.use(chaiAsPromised);
-const expect = chai.expect;
-import * as Debug from 'debug';
+/**
+ * Test that control of execution can be non-sequentially passed from one
+ * instruction to another.
+ */
 
+import { expect, log } from './setup'
 import { Machine } from '../src/Machine'
-
-const log = Debug('Mel:Test');
 
 describe(`Subroutines`, () => {
   let vm: Machine
 
-  beforeEach(() => {
-    vm = new Machine()
-  })
+  beforeEach(() => vm = new Machine())
 
   it(`should follow go-tos`, () =>
     expect(vm.run(`
@@ -36,4 +32,4 @@ describe(`Subroutines`, () => {
       EXIT @accum  ; Return the accumulator.
     `)
       .then(() => vm.bus.accum.read())).to.eventually.equal(12))
-});
+})

@@ -1,12 +1,9 @@
-import * as chai from 'chai';
-import * as chaiAsPromised from 'chai-as-promised';
-chai.use(chaiAsPromised);
-const expect = chai.expect;
-import * as Debug from 'debug';
+/**
+ * Test that comments can be put into the source code and are ignored.
+ */
 
+import { expect, log } from './setup'
 import { Machine } from '../src/Machine'
-
-const log = Debug('Mel:Test');
 
 describe(`Source code comments`, () => {
   let vm: Machine
@@ -47,7 +44,7 @@ describe(`Source code comments`, () => {
     ; A one-line comment.
     Start:          ; Comment
       COPY 0d100    ; Comment.
-      COPY 0d100;;;;; Comment.
+      COPY 0d101;;;;; Comment.
     `)
-      .then(() => vm.bus.accum.read())).to.eventually.equal(100))
-});
+      .then(() => vm.bus.accum.read())).to.eventually.equal(101))
+})

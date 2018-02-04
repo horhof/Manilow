@@ -1,13 +1,10 @@
-import * as chai from 'chai';
-import * as chaiAsPromised from 'chai-as-promised';
-import * as Debug from 'debug';
+/**
+ * Test the Variable argument class.
+ */
 
+import { expect, log } from './setup'
 import { Variable } from '../src/argument/Mutable'
 import { IO, Memory } from '../src/State'
-
-chai.use(chaiAsPromised);
-const expect = chai.expect;
-const log = Debug('Mel:Test');
 
 describe(`Variable`, () => {
   let memory: Memory

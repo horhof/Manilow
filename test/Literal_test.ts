@@ -1,12 +1,9 @@
-import * as chai from 'chai';
-import * as chaiAsPromised from 'chai-as-promised';
-import * as Debug from 'debug';
+/**
+ * Test the Literal argument class.
+ */
 
+import { expect, log } from './setup'
 import { Argument, Block, Literal } from '../src/argument/Argument'
-
-chai.use(chaiAsPromised);
-const expect = chai.expect;
-const log = Debug('Mel:Test');
 
 describe(`Literal`, () => {
   it(`should be readable for decimal values`, () =>

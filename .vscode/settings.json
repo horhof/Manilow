@@ -4,5 +4,13 @@
     "src/**/*.js.map": true,
     "node_modules": true,
     ".vscode": true
-  }
+  },
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.detectIndentation": false,
+  "typescript.format.enable": true,
+  "editor.formatOnSave": true,
+  "typescript.format.insertSpaceAfterFunctionKeywordForAnonymousFunctions": false,
+  "typescript.tsdk": "node_modules\\typescript\\lib",
+  "tslint.enable": true
 }
