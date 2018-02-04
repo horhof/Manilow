@@ -33,7 +33,7 @@ const debug = Debug('Mel:Parser:Debug')
  * of instructions.
  * 
  * API:
- * - Get program: source = operations
+ * - Get program: source code = list of instructions
  */
 export class Parser {
   /**
@@ -398,9 +398,10 @@ export class Parser {
   }
 
   private define(block: ArgumentSource, target: ArgumentSource): void {
-    debug(`define> Block=%o Target=%o`, block, target)
-    const address = Number(target.content)
-    this.variables[block.content] = address
+    debug(`Define> Block=%o Target=%o`, block, target)
+    const address = Number(block.content)
+    debug(`Define> Address=%o`, address)
+    this.variables[target.content] = address
     info(`Variable "%s" points to address %d.`, block.content, address)
   }
 }

@@ -29,7 +29,10 @@ if (!filename) {
 
 log(`Running file %s...`, filename)
 const program = fs.readFileSync(filename, 'utf-8')
-vm.run(program)
+vm.run(program, false)
   .then(() => {
+    log(`Loaded. Running...`)
+    return vm.execute()
+  }).then(() => {
     process.exit(0)
   })
