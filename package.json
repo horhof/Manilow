@@ -6,7 +6,7 @@
     "check": "nyc mocha",
     "cc": "npm run compile && npm run check",
     "report": "nyc report --reporter=html",
-    "test": "npm run cc && mkdir coverage && nyc report --reporter=json > coverage/coverage.json",
+    "test": "npm run cc && mkdir coverage && nyc report --reporter=json > coverage/coverage.json && codecov",
     "start": "tsc && node src/Loader -- ./mel/program.mel"
   },
   "dependencies": {
@@ -21,6 +21,7 @@
     "@types/node": "^8.0.46",
     "chai": "^4.1.2",
     "chai-as-promised": "^7.1.1",
+    "codecov": "^3.0.0",
     "coveralls": "^3.0.0",
     "mocha": "^5.0.0",
     "nyc": "^11.4.1",
