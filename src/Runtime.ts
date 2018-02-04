@@ -100,7 +100,7 @@ export class Runtime {
     info(`Running instruction %d/%d...`, no, this.program.length)
 
     if (!lambda) {
-      info(`Instruction ${no} not found. Halting...`)
+      info(`Instruction ${no + 1} not found. Halting...`)
       return this.halt()
     }
 
@@ -113,22 +113,19 @@ export class Runtime {
 
     lambda()
 
-    this.dumpState()
-    this.dumpRegisters()
-
     // Re-read the instruction pointer in case an operation has manipulated it.
     const nextNo = this.registers.instr.read() + 1
-    debug(`step> Moving from instruction %d to %d.`, no, nextNo)
+    debug(`step> Moving from instruction %d to %d.`, no + 1, nextNo + 1)
     this.registers.instr.write(nextNo)
 
     if (nextNo >= this.program.length) {
-      info(`End of program. Terminated on op #%o.`, no)
+      info(`End of program. Terminated on op #%o.`, no + 1)
       return this.halt()
     }
 
     this.steps++
     if (this.steps > Runtime.MAX_STEPS) {
-      info(`Too many ops. Terminated on op #%o.`, no)
+      info(`Too many ops. Terminated on op #%o.`, no + 1)
       return this.halt()
     }
   }
