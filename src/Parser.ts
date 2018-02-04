@@ -342,13 +342,19 @@ export class Parser {
       .trim()
       .split(Parser.ARG_SEP)
 
-    const args = <ArgumentSource[]>argumentSource.map(this.parseArgumentSource.bind(this))
+    const args = <ArgumentSource[]>argumentSource
+      .map(this.parseArgumentSource.bind(this))
+      .filter(x => x)
 
     return { opCode, arguments: args }
   }
 
-  private parseArgumentSource(argText: string): ArgumentSource {
+  private parseArgumentSource(argText: string): ArgumentSource | void {
     argText = argText.trim()
+
+    if (argText.length < 1)
+      return
+
     const firstChar = argText[0]
 
     if (Parser.BLOCK_PATTERN.test(argText)) {
