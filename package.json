@@ -6,7 +6,7 @@
     "check": "nyc mocha",
     "cc": "npm run compile && npm run check",
     "report": "nyc report --reporter=html",
-    "test": "npm run cc && nyc report --reporter=json > coverage/coverage.json",
+    "test": "npm run cc && mkdir coverage && nyc report --reporter=json > coverage/coverage.json",
     "start": "tsc && node src/Loader -- ./mel/program.mel"
   },
   "dependencies": {
