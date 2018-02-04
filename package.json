@@ -6,8 +6,8 @@
     "check": "nyc mocha",
     "cc": "npm run compile && npm run check",
     "report": "nyc report --reporter=html",
-    "start": "tsc && node src/Loader -- ./mel/program.mel",
-    "test": "tsc && nyc mocha && nyc report --reporter=text-lcov | coveralls"
+    "test": "npm run cc",
+    "start": "tsc && node src/Loader -- ./mel/program.mel"
   },
   "dependencies": {
     "debug": "^3.1.0",
