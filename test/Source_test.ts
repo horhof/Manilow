@@ -15,12 +15,6 @@ describe(`Virtual machine`, () => {
       JIMJOM 0d100
     `)).to.be.rejectedWith(Error))
 
-  it(`should copy to the accumulator`, () =>
-    expect(vm.run(`
-      COPY 0d100
-    `)
-      .then(() => vm.bus.accum.read())).to.eventually.equal(100))
-
   it(`should multiply accumulator`, () =>
     expect(vm.run(`
       COPY 0d100
