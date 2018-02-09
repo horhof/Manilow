@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "scripts": {
     "compile": "tsc",
-    "check": "nyc mocha",
+    "check": "nyc --silent mocha",
     "cc": "npm run compile && npm run check",
     "report": "nyc report --reporter=html",
     "test": "npm run cc && mkdir coverage && nyc report --reporter=json > coverage/coverage.json && codecov",
