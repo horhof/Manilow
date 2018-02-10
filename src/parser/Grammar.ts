@@ -1,6 +1,8 @@
 import {
+  all,
   alt,
   createLanguage,
+  optWhitespace,
   regexp,
   sepBy,
   seqMap,
@@ -8,7 +10,9 @@ import {
   whitespace
 } from 'parsimmon'
 
-import { ParsedInstruction } from './InstructionSrc'
+import { ParsedInstruction, InstructionSrc } from './InstructionSrc'
+import { ParsedLine } from './LineSrc';
+import { log } from '../../test/setup';
 
 const OpCode =
   () => whitespace.then(regexp(/[A-Z]+/))
@@ -26,13 +30,13 @@ const Pointer =
   () => regexp(/\*[^,]+/)
 
 const DataLabel =
-  l => whitespace.then(alt(l.Literal, l.Address, l.Variable, l.Pointer))
+  l => alt(l.Literal, l.Address, l.Variable, l.Pointer)
 
 const BlockLabel =
-  () => regexp(/\w[^:]+/i)
+  () => regexp(/\w[^:]+/i).skip(string(':'))
 
 const Argument =
-  l => alt(l.DataLabel, l.BlockLabel)
+  l => whitespace.then(alt(l.DataLabel, l.BlockLabel))
 
 const ArgumentList =
   l => sepBy(l.Argument, string(','))
@@ -42,6 +46,35 @@ const Instruction =
     l.OpCode, l.ArgumentList,
     (opCode: string, args: string[]): ParsedInstruction => ({ opCode, args })
   )
+
+const Comment =
+  () => optWhitespace.then(string(';')).then(optWhitespace).then(all)
+
+const Blank =
+  () => optWhitespace
+
+const Line =
+  l => seqMap(
+    l.Instruction.or(l.BlockLabel), l.Comment.many(),
+    (code: string | ParsedInstruction, comment: string[]): ParsedLine => {
+      const isBlock = typeof code === 'string'
+
+      let block: string | undefined
+      let instructionSrc: ParsedInstruction | undefined
+
+      if (isBlock)
+        block = <string>code
+      else
+        instructionSrc = <ParsedInstruction>code
+
+      return {
+        block,
+        instructionSrc,
+        comment: comment[0]
+      }
+    }
+  )
+
 
 export const Grammar = createLanguage({
   OpCode,
@@ -53,5 +86,8 @@ export const Grammar = createLanguage({
   BlockLabel,
   Argument,
   ArgumentList,
-  Instruction
+  Instruction,
+  Comment,
+  Blank,
+  Line
 })

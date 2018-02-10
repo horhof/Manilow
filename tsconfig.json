@@ -2,16 +2,17 @@
   "compilerOptions": {
     "module": "commonjs",
     "target": "es2016",
-    "preserveConstEnums": true,
-    "sourceMap": true,
-    "strictFunctionTypes": true,
+    "preserveConstEnums": false,
     "noImplicitAny": true,
     "noUnusedParameters": true,
     "noUnusedLocals": true,
     "noImplicitReturns": true,
     "noImplicitThis": true,
     "strictNullChecks": true,
-    "strictPropertyInitialization": true
+    "strictFunctionTypes": true,
+    "strictPropertyInitialization": true,
+    "sourceMap": true,
+    "pretty": true
   },
   "include": [
     "src/*.ts"

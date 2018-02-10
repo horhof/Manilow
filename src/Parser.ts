@@ -276,7 +276,7 @@ export class Parser {
               argument.content = address
             }
             break;
-          default:
+          case ArgumentType.VARIABLE:
             {
               const label = argument.content
               const address = this.variables[label]
@@ -358,19 +358,19 @@ export class Parser {
     const firstChar = argText[0]
 
     if (Parser.BLOCK_PATTERN.test(argText)) {
-      //debug(`parseArgSrc> "%s" is a block label.`, argText)
+      debug(`Parse argument src> "%s" is a block label.`, argText)
       return { type: ArgumentType.BLOCK, content: argText }
     }
 
     if (Parser.LITERAL_PATTERN.test(argText)) {
       const content = this.parseLiteral(argText)
-      //debug(`parseArgSrc> "%s" is a literal. (%d)`, argText, content)
+      debug(`Parse argument src> "%s" is a literal. (%d)`, argText, content)
       return { type: ArgumentType.LITERAL, content }
     }
 
     const sigil = firstChar
     const content = argText.replace(/^\W+/, '')
-    //debug(`instantiateArg> "%s" is a data label with a %s sigil. ArgText=%s`, content, sigil, argText)
+    debug(`Parse argument src> "%s" is a data label with a %s sigil. ArgText=%s`, content, sigil, argText)
 
     if (sigil === Parser.ADDRESS_SIGIL)
       return { type: ArgumentType.ADDRESS, content }

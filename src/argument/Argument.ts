@@ -12,6 +12,8 @@
  * I am an abstract class representing an entity capable of being an argument
  * of an operation. Arguments always wrap some kind of value and control the
  * reading and writing of it.
+ * 
+ * I will be a location, either of data or of an instruction.
  *  
  * API:
  * - Address
@@ -54,6 +56,9 @@ export class Literal extends Argument {
 /**
  * I am an operand pointing to an instruction. Operations will use operands
  * like these when doing jumps.
+ * 
+ * All other arguments are pointing to data; I am the only one pointing to an
+ * instruction.
  */
 export class Block extends Literal {
   get summary() {
