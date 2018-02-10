@@ -29,7 +29,7 @@ const DataLabel =
   l => alt(l.Literal, l.Address, l.Variable, l.Pointer)
 
 const BlockLabel =
-  () => regexp(/\w[^:]+/i).skip(string(':'))
+  () => regexp(/\w[^:]+/i)
 
 const Argument =
   l => whitespace.then(alt(l.DataLabel, l.BlockLabel))
@@ -37,24 +37,11 @@ const Argument =
 const ArgumentList =
   l => sepBy(l.Argument, string(','))
 
-const Instruction =
+export const Instruction =
   l => seqMap(
     l.OpCode, l.ArgumentList,
     (opCode: string, args: string[]): ParsedInstruction => ({ opCode, args })
   )
-
-const Grammar = createLanguage({
-  OpCode,
-  Literal,
-  Address,
-  Variable,
-  Pointer,
-  DataLabel,
-  BlockLabel,
-  Argument,
-  ArgumentList,
-  Instruction
-})
 
 export interface ParsedInstruction {
   opCode: string
@@ -65,13 +52,26 @@ export interface ParsedInstruction {
  * A parser for a line of source code containing an instruction.
  */
 export class InstructionSrc {
-  public valid!: boolean
+  valid = false
 
-  public opCode!: string
+  opCode: string
 
-  public args!: string[]
+  args: string[]
 
-  private uncompiled!: string
+  uncompiled!: string
+
+  grammar = createLanguage({
+    OpCode,
+    Literal,
+    Address,
+    Variable,
+    Pointer,
+    DataLabel,
+    BlockLabel,
+    Argument,
+    ArgumentList,
+    Instruction
+  })
 
   /**
    * @param instruction E.g. `  DEC 0d10`.
@@ -79,7 +79,7 @@ export class InstructionSrc {
   constructor(instruction: string) {
     this.uncompiled = instruction
 
-    const result = Grammar.Instruction.parse(this.uncompiled)
+    const result = this.grammar.Instruction.parse(this.uncompiled)
     if (result.status) {
       this.valid = true
       this.opCode = result.value.opCode
