@@ -10,7 +10,9 @@
     "start": "tsc && node src/Loader -- ./mel/program.mel"
   },
   "dependencies": {
+    "@types/parsimmon": "^1.6.1",
     "debug": "^3.1.0",
+    "parsimmon": "^1.6.4",
     "supports-color": "^5.1.0"
   },
   "devDependencies": {
