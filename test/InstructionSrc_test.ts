@@ -1,7 +1,7 @@
 import { expect, log } from './setup'
 import { InstructionSrc } from '../src/parser/InstructionSrc'
 
-describe.only(`Instruction parser`, () => {
+describe(`Instruction source`, () => {
   let i: InstructionSrc
 
   it(`should parse a nullary instruction`, () => {
@@ -30,5 +30,29 @@ describe.only(`Instruction parser`, () => {
     expect(i.valid).to.be.true
     expect(i.opCode).to.equal('ZERO')
     expect(i.args).to.eql(['@accum', '@data', '@stack'])
+  })
+
+  it(`should parse literals`, () => {
+    i = new InstructionSrc(`  COPY 0x10`)
+    expect(i.valid).to.be.true
+    expect(i.args[0]).to.eql('0x10')
+  })
+
+  it(`should parse variables`, () => {
+    i = new InstructionSrc(`  ZERO @accum`)
+    expect(i.valid).to.be.true
+    expect(i.args[0]).to.eql('@accum')
+  })
+
+  it(`should parse pointers`, () => {
+    i = new InstructionSrc(`  INC *stack`)
+    expect(i.valid).to.be.true
+    expect(i.args[0]).to.eql('*stack')
+  })
+
+  it(`should parse addresses`, () => {
+    i = new InstructionSrc(`  IN &rec`)
+    expect(i.valid).to.be.true
+    expect(i.args[0]).to.eql('&rec')
   })
 })
