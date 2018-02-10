@@ -20,7 +20,8 @@ export interface ParsedLine {
 }
 
 /**
- * A line is either an instruction, with an optional comment.
+ * A line is either empty, an instruction, or a block. All three may have a
+ * comment.
  */
 const Line =
   l => seqMap(
@@ -56,7 +57,7 @@ const Block =
   () => regexp(/\w[^:]+/i).skip(string(':'))
 
 /**
- * 
+ * A line that just contains a comment.
  */
 const Comment =
   () => optWhitespace
@@ -65,7 +66,7 @@ const Comment =
     .then(all)
 
 const Blank =
-  () => optWhitespace
+  () => optWhitespace.trim(optWhitespace)
 
 /**
  * Lines can either have a block (but no instruction), an instruction (but no
