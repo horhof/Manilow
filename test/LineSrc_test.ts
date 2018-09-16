@@ -1,7 +1,7 @@
 import { expect, log } from './setup'
 import { LineSrc, LineType } from '../src/parser/LineSrc';
 
-describe(`Line grammar`, () => {
+describe.only(`Line grammar`, () => {
   /** Expect all parsing results to have a success status. */
   const status = true
 
@@ -48,7 +48,7 @@ describe(`Line grammar`, () => {
     })
   })
 
-  describe.skip(`Line parser`, () => {
+  describe(`Line src`, () => {
     it(`should parse spaces as empty lines`, () =>
       expect(new LineSrc(`    `).type).to.equal(LineType.EMPTY))
 
@@ -64,9 +64,10 @@ describe(`Line grammar`, () => {
       expect(line.comment).not.to.be.empty
     })
 
-    it(`should parse comments on the end of blocks`, () => {
+    it.only(`should parse comments on the end of blocks`, () => {
       const line = new LineSrc(`Sub:  ; Begin sub-routine.`)
-      log(`Line=%O`, line)
+      expect(line.type).to.equal(LineType.BLOCK)
+      expect(line.comment).to.equal(`Begin sub-routine.`)
     })
   })
 })

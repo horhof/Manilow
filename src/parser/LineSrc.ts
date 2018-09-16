@@ -49,9 +49,11 @@ const Line =
  * A line that defines the start of a block, whose value will be the next
  * instruction. Must begin with a letter and end with a colon.
  *
- *     SubRoutine:  ; Block label.
- *       OP a       ; Points to this instruction.
- *       OP a
+ * ```asm
+ * SubRoutine:  ; Block label.
+ *   OP a       ; Points to this instruction.
+ *   OP a
+ * ```
  */
 const Block =
   () => regexp(/\w[^:]+/i).skip(string(':'))
@@ -81,7 +83,7 @@ export enum LineType {
 export class LineSrc {
   valid = false
 
-  type?: LineType
+  type = LineType.EMPTY
 
   block?: string
 
@@ -100,14 +102,24 @@ export class LineSrc {
   })
 
   constructor(line: string) {
-    log(`New LineSrc> Line=%o`, line)
     this.uncompiled = line
 
     const result = LineSrc.Grammar.Line.parse(this.uncompiled)
+    log(`%O`, result)
     if (result.status) {
       this.valid = true
       this.block = result.value.block
+      this.instruction = result.value.instruction
       this.comment = result.value.comment
+
+      log(`%O`, result.value)
+
+      if (this.block)
+        this.type = LineType.BLOCK
+      else if (this.block)
+        this.type = LineType.INSTRUCTION
+      else
+        this.type = LineType.EMPTY
     }
   }
 }

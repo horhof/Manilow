@@ -1,7 +1,7 @@
 import { expect, log } from './setup'
 import { InstructionSrc } from '../src/parser/InstructionSrc'
 
-describe(`Instruction source`, () => {
+describe.only(`Instruction source`, () => {
   let i: InstructionSrc
 
   it(`should parse a nullary instruction`, () => {
